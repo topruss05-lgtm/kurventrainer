@@ -1,0 +1,37 @@
+import type { ModuleId, ExerciseType, Difficulty } from './exercise.js';
+
+export interface ModuleProgress {
+  completed: number;
+  total: number;
+  correct: number;
+  lastAttempt?: string; // ISO date
+}
+
+export interface ExerciseResult {
+  exerciseId: string;
+  correct: boolean;
+  timestamp: string;
+}
+
+export interface SpacedRepetitionCard {
+  exerciseId: string;
+  box: 1 | 2 | 3;
+  lastReviewed?: string; // ISO date
+  nextDue?: string;
+}
+
+export interface AppProgress {
+  modules: Record<ModuleId, ModuleProgress>;
+  results: ExerciseResult[];
+  spacedRepetition: SpacedRepetitionCard[];
+  lastSessionStart?: string;
+}
+
+export interface ModuleConfig {
+  id: ModuleId;
+  title: string;
+  description: string;
+  order: number;
+  exerciseTypes: ExerciseType[];
+  difficulties: Difficulty[];
+}
