@@ -186,7 +186,7 @@ export function createIntervalSelector(
 
     // Snap to integer, clamp to board range on every drag
     g.on('drag', () => {
-      const snapped = Math.max(xMin, Math.min(xMax, Math.round(g.X())));
+      const snapped = Math.max(xMin, Math.min(xMax, Math.round(g.X() * 2) / 2));
       (g as unknown as { setPosition(t: number, c: number[]): void })
         .setPosition(JXG.COORDS_BY_USER, [snapped, 0]);
       board.update();
