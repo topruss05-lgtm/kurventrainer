@@ -174,27 +174,28 @@ export function createIntervalSelector(
     highlight: false,
   } as Record<string, unknown>);
 
-  const gliderFrom = board.create('glider', [initialFrom, 0, rail], {
-    size: 8,
-    fillColor: color,
-    strokeColor: color,
-    name: 'von',
-    label: { fontSize: 12, offset: [0, -20] },
-    showInfobox: false,
-    snapToGrid: true,
-    snapSizeX: 1,
-  } as Record<string, unknown>) as JXG.GeometryElement & { X(): number };
+  const makeGlider = (initial: number, label: string) => {
+    const g = board.create('glider', [initial, 0, rail], {
+      size: 8,
+      fillColor: color,
+      strokeColor: color,
+      name: label,
+      label: { fontSize: 12, offset: [0, -20] },
+      showInfobox: false,
+    } as Record<string, unknown>) as JXG.GeometryElement & { X(): number };
 
-  const gliderTo = board.create('glider', [initialTo, 0, rail], {
-    size: 8,
-    fillColor: color,
-    strokeColor: color,
-    name: 'bis',
-    label: { fontSize: 12, offset: [0, -20] },
-    showInfobox: false,
-    snapToGrid: true,
-    snapSizeX: 1,
-  } as Record<string, unknown>) as JXG.GeometryElement & { X(): number };
+    // Snap to integer, clamp to board range on every drag
+    g.on('drag', () => {
+      const snapped = Math.max(xMin, Math.min(xMax, Math.round(g.X())));
+      (g as unknown as { setPosition(t: number, c: number[]): void })
+        .setPosition(JXG.COORDS_BY_USER, [snapped, 0]);
+      board.update();
+    });
+    return g;
+  };
+
+  const gliderFrom = makeGlider(initialFrom, 'von');
+  const gliderTo   = makeGlider(initialTo,   'bis');
 
   // Shaded area between gliders
   const top = boardBB[1];
