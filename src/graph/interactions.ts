@@ -162,10 +162,19 @@ export function createIntervalSelector(
   initialTo: number,
   color: string = '#0d7377',
 ): { getInterval: () => [number, number]; destroy: () => void } {
-  // Create draggable gliders on the x-axis
-  const xAxis = board.defaultAxes!.x;
+  // Create a hidden segment spanning exactly the board's x-range
+  // so gliders can't be dragged beyond the visible area
+  const boardBB = board.getBoundingBox(); // [xMin, yMax, xMax, yMin]
+  const xMin = Math.ceil(boardBB[0]);
+  const xMax = Math.floor(boardBB[2]);
 
-  const gliderFrom = board.create('glider', [initialFrom, 0, xAxis], {
+  const rail = board.create('segment', [[xMin, 0], [xMax, 0]], {
+    visible: false,
+    fixed: true,
+    highlight: false,
+  } as Record<string, unknown>);
+
+  const gliderFrom = board.create('glider', [initialFrom, 0, rail], {
     size: 8,
     fillColor: color,
     strokeColor: color,
@@ -173,10 +182,10 @@ export function createIntervalSelector(
     label: { fontSize: 12, offset: [0, -20] },
     showInfobox: false,
     snapToGrid: true,
-    snapSizeX: 0.5,
+    snapSizeX: 1,
   } as Record<string, unknown>) as JXG.GeometryElement & { X(): number };
 
-  const gliderTo = board.create('glider', [initialTo, 0, xAxis], {
+  const gliderTo = board.create('glider', [initialTo, 0, rail], {
     size: 8,
     fillColor: color,
     strokeColor: color,
@@ -184,13 +193,12 @@ export function createIntervalSelector(
     label: { fontSize: 12, offset: [0, -20] },
     showInfobox: false,
     snapToGrid: true,
-    snapSizeX: 0.5,
+    snapSizeX: 1,
   } as Record<string, unknown>) as JXG.GeometryElement & { X(): number };
 
   // Shaded area between gliders
-  const bb = board.getBoundingBox();
-  const top = bb[1];
-  const bottom = bb[3];
+  const top = boardBB[1];
+  const bottom = boardBB[3];
 
   const polygon = board.create('polygon', [
     [() => gliderFrom.X(), bottom],
@@ -216,6 +224,7 @@ export function createIntervalSelector(
       board.removeObject(polygon as JXG.GeometryElement);
       board.removeObject(gliderTo as JXG.GeometryElement);
       board.removeObject(gliderFrom as JXG.GeometryElement);
+      board.removeObject(rail as JXG.GeometryElement);
     },
   };
 }
