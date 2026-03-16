@@ -9,7 +9,7 @@ export function renderCriteriaQuiz(
   exercise: CriteriaQuizExercise,
   onComplete: () => void,
 ): (() => void) | null {
-  let board: JXG.Board | null = null;
+  let board: import('../graph/canvas-board.js').CanvasBoard | null = null;
 
   const question = document.createElement('h3');
   question.className = 'text-lg font-semibold mb-4';

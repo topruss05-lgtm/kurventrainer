@@ -1,6 +1,7 @@
-import JXG from 'jsxgraph';
 import { navigate } from '../router.js';
 import { COLORS } from '../graph/function-plotter.js';
+import { CanvasBoard } from '../graph/canvas-board.js';
+import { createFunctionCurve, createLine, createPoint } from '../graph/canvas-renderer.js';
 
 interface PresetFunction {
   label: string;
@@ -8,7 +9,7 @@ interface PresetFunction {
   f1: (x: number) => number;
   f2: (x: number) => number;
   latex: string;
-  bbox: [number, number, number, number]; // xMin, yMax, xMax, yMin
+  bbox: [number, number, number, number];
 }
 
 const PRESETS: PresetFunction[] = [
@@ -66,9 +67,9 @@ function createInfoLine(text: string, color?: string): HTMLElement {
 }
 
 export function renderExplorer(container: HTMLElement): (() => void) | null {
-  let boards: JXG.Board[] = [];
-  let trackerLines: unknown[] = [];
-  let trackerPoints: unknown[] = [];
+  let boards: CanvasBoard[] = [];
+  let trackerLines: ReturnType<typeof createLine>[] = [];
+  let trackerPoints: ReturnType<typeof createPoint>[] = [];
   let currentPreset = 0;
 
   // --- Header ---
@@ -104,13 +105,13 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
     presetBar.appendChild(btn);
   });
 
-  // --- Function label ---
   const fnLabel = document.createElement('p');
   fnLabel.className = 'text-sm font-medium mb-3';
   fnLabel.style.color = 'var(--color-ink-secondary)';
 
   // --- Board containers ---
   const boardContainers: HTMLDivElement[] = [];
+  const wrappers: HTMLDivElement[] = [];
 
   for (let i = 0; i < 3; i++) {
     const wrapper = document.createElement('div');
@@ -120,18 +121,13 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
 
     const badge = document.createElement('span');
     badge.className = 'absolute top-2 left-2 z-10 text-xs font-bold px-2 py-0.5 rounded';
-    badge.style.cssText = `
-      background: ${GRAPH_COLORS[i]}15; color: ${GRAPH_COLORS[i]};
-      pointer-events: none;
-    `;
+    badge.style.cssText = `background: ${GRAPH_COLORS[i]}15; color: ${GRAPH_COLORS[i]}; pointer-events: none;`;
     badge.textContent = GRAPH_LABELS[i];
 
     const boardDiv = document.createElement('div');
-    boardDiv.style.height = `${BOARD_HEIGHT}px`;
-
     wrapper.append(badge, boardDiv);
     boardContainers.push(boardDiv);
-    container.appendChild(document.createComment('')); // placeholder, we append later
+    wrappers.push(wrapper);
   }
 
   // --- Info panel ---
@@ -139,21 +135,14 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
   infoPanel.className = 'card p-3 text-sm space-y-1';
   infoPanel.style.color = 'var(--color-ink-secondary)';
   infoPanel.style.minHeight = '4.5rem';
-  const defaultHint = createInfoLine('Bewege den Cursor \u00fcber einen Graphen\u2026', 'var(--color-ink-muted)');
-  infoPanel.appendChild(defaultHint);
+  infoPanel.appendChild(createInfoLine('Bewege den Cursor \u00fcber einen Graphen\u2026', 'var(--color-ink-muted)'));
 
   // --- Assemble ---
-  container.append(backBtn, h1, subtitle, presetBar, fnLabel);
-  for (const bc of boardContainers) {
-    container.appendChild(bc.parentElement!);
-  }
-  container.appendChild(infoPanel);
+  container.append(backBtn, h1, subtitle, presetBar, fnLabel, ...wrappers, infoPanel);
 
   // --- Board creation ---
   function createBoards(preset: PresetFunction): void {
-    boards.forEach(b => {
-      try { JXG.JSXGraph.freeBoard(b); } catch { /* already freed */ }
-    });
+    boards.forEach(b => b.destroy());
     boards = []; trackerLines = []; trackerPoints = [];
 
     const fns = [preset.f, preset.f1, preset.f2];
@@ -161,11 +150,6 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
 
     for (let i = 0; i < 3; i++) {
       boardContainers[i].textContent = '';
-      const innerDiv = document.createElement('div');
-      innerDiv.id = `explorer-board-${i}-${Date.now()}`;
-      innerDiv.style.width = '100%';
-      innerDiv.style.height = `${BOARD_HEIGHT}px`;
-      boardContainers[i].appendChild(innerDiv);
 
       // Calculate y bounds
       let yMin = Infinity, yMax = -Infinity;
@@ -181,71 +165,49 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
       yMin -= ySpan * 0.15;
       yMax += ySpan * 0.15;
 
-      const board = JXG.JSXGraph.initBoard(innerDiv, {
-        boundingbox: [xMin - 0.5, yMax, xMax + 0.5, yMin],
-        axis: true,
-        showNavigation: false,
-        showCopyright: false,
-        keepAspectRatio: false,
-        pan: { enabled: true, needTwoFingers: true },
-      } as unknown as Record<string, unknown>);
-
-      board.create('functiongraph', [fns[i]], {
-        strokeColor: GRAPH_COLORS[i],
-        strokeWidth: 2.5,
-        highlight: false,
-        hasInfobox: false,
+      const board = new CanvasBoard(boardContainers[i], {
+        boundingBox: [xMin - 0.5, yMax, xMax + 0.5, yMin],
+        height: BOARD_HEIGHT,
       });
 
-      // Pre-create tracker elements (hidden)
-      const lineP1 = board.create('point', [0, yMin - 100], {
-        visible: false, fixed: true, name: '',
-      });
-      const lineP2 = board.create('point', [0, yMax + 100], {
-        visible: false, fixed: true, name: '',
-      });
-      const trackerLine = board.create('line', [lineP1, lineP2], {
-        straightFirst: false, straightLast: false,
-        strokeColor: '#8888a4', strokeWidth: 1, dash: 2,
-        highlight: false, hasInfobox: false,
-        point1: { visible: false }, point2: { visible: false },
-        visible: false,
-      });
+      board.addElement(createFunctionCurve(fns[i], { color: GRAPH_COLORS[i], strokeWidth: 2.5 }));
 
-      const trackerPoint = board.create('point', [0, 0], {
-        fixed: true, size: 5,
-        fillColor: GRAPH_COLORS[i], strokeColor: GRAPH_COLORS[i],
-        name: '', highlight: false, showInfobox: false,
-        visible: false,
-      });
+      // Tracker line + point (hidden)
+      const tLine = createLine([0, -1000], [0, 1000], { color: '#8888a4', dash: 2 });
+      tLine.visible = false;
+      board.addElement(tLine);
+
+      const tPoint = createPoint(0, 0, { color: GRAPH_COLORS[i], size: 5 });
+      tPoint.visible = false;
+      board.addElement(tPoint);
 
       boards.push(board);
-      trackerLines.push(trackerLine);
-      trackerPoints.push(trackerPoint);
+      trackerLines.push(tLine);
+      trackerPoints.push(tPoint);
 
-      // Mouse/touch events
-      board.on('mousemove', (e: Event) => handleMove(e, i));
-      board.on('touchmove', (e: Event) => handleMove(e, i));
-      innerDiv.addEventListener('mouseleave', hideTrackers);
+      board.on('move', (e) => handleMove(e, i));
+      board.canvas.addEventListener('mouseleave', hideTrackers);
+      board.update();
     }
   }
 
-  function handleMove(e: Event, boardIndex: number): void {
+  function handleMove(e: PointerEvent | TouchEvent, boardIndex: number): void {
     const board = boards[boardIndex];
     if (!board) return;
 
-    let coords: JXG.Coords;
-    try {
-      const cPos = board.getMousePosition(e as MouseEvent);
-      coords = new JXG.Coords(JXG.COORDS_BY_SCREEN, cPos, board);
-    } catch {
-      return;
-    }
+    let clientX: number, clientY: number;
+    if (typeof TouchEvent !== 'undefined' && e instanceof TouchEvent) {
+      const t = e.touches?.[0];
+      if (!t) return;
+      clientX = t.clientX; clientY = t.clientY;
+    } else if (e instanceof PointerEvent) {
+      clientX = e.clientX; clientY = e.clientY;
+    } else return;
 
-    const x = coords.usrCoords[1];
-    if (!Number.isFinite(x)) return;
+    const [mx] = board.toMathCoords(clientX, clientY);
+    if (!Number.isFinite(mx)) return;
 
-    updateTrackers(x);
+    updateTrackers(mx);
   }
 
   function updateTrackers(x: number): void {
@@ -253,26 +215,18 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
     const fns = [preset.f, preset.f1, preset.f2];
 
     for (let i = 0; i < 3; i++) {
-      const board = boards[i];
-      if (!board) continue;
-
       const y = fns[i](x);
+      trackerLines[i].setEndpoints([x, -1000], [x, 1000]);
+      trackerLines[i].visible = true;
 
-      const line = trackerLines[i] as JXG.GeometryElement;
-      line.setAttribute({ visible: true });
-      const tl = line as unknown as { point1: JXG.Point; point2: JXG.Point };
-      tl.point1.moveTo([x, -1000]);
-      tl.point2.moveTo([x, 1000]);
-
-      const pt = trackerPoints[i] as JXG.Point;
       if (Number.isFinite(y)) {
-        pt.moveTo([x, y]);
-        pt.setAttribute({ visible: true });
+        trackerPoints[i].setPosition(x, y);
+        trackerPoints[i].visible = true;
       } else {
-        pt.setAttribute({ visible: false });
+        trackerPoints[i].visible = false;
       }
 
-      board.update();
+      boards[i]?.update();
     }
 
     updateInfo(x, fns);
@@ -280,8 +234,8 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
 
   function hideTrackers(): void {
     for (let i = 0; i < 3; i++) {
-      (trackerLines[i] as JXG.GeometryElement | undefined)?.setAttribute({ visible: false });
-      (trackerPoints[i] as JXG.GeometryElement | undefined)?.setAttribute({ visible: false });
+      if (trackerLines[i]) trackerLines[i].visible = false;
+      if (trackerPoints[i]) trackerPoints[i].visible = false;
       boards[i]?.update();
     }
     infoPanel.textContent = '';
@@ -300,7 +254,6 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
     xLine.appendChild(xBold);
     infoPanel.appendChild(xLine);
 
-    // f' interpretation
     const f1Line = document.createElement('div');
     if (Math.abs(f1Val) < 0.15) {
       f1Line.textContent = "f'(x) \u2248 0 \u2192 m\u00f6gliche Extremstelle!";
@@ -314,7 +267,6 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
     }
     infoPanel.appendChild(f1Line);
 
-    // f'' interpretation
     const f2Line = document.createElement('div');
     if (Math.abs(f2Val) < 0.15) {
       f2Line.textContent = "f''(x) \u2248 0 \u2192 m\u00f6gliche Wendestelle!";
@@ -349,12 +301,9 @@ export function renderExplorer(container: HTMLElement): (() => void) | null {
     createBoards(preset);
   }
 
-  // --- Initialize ---
   loadPreset(0);
 
   return () => {
-    boards.forEach(b => {
-      try { JXG.JSXGraph.freeBoard(b); } catch { /* already freed */ }
-    });
+    boards.forEach(b => b.destroy());
   };
 }

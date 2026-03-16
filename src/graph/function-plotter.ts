@@ -1,3 +1,7 @@
+import type { BoardElement } from './canvas-board.js';
+import type { CanvasBoard } from './canvas-board.js';
+import { createFunctionCurve, createPoint } from './canvas-renderer.js';
+
 export interface PlotStyle {
   color?: string;
   strokeWidth?: number;
@@ -18,41 +22,40 @@ const DEFAULT_STYLES: PlotStyle[] = [
 ];
 
 export function plotFunction(
-  board: JXG.Board,
+  board: CanvasBoard,
   fn: (x: number) => number,
   style?: PlotStyle,
   styleIndex: number = 0,
   xRange?: [number, number],
-): JXG.GeometryElement {
+): BoardElement {
   const s = style ?? DEFAULT_STYLES[styleIndex % DEFAULT_STYLES.length];
-  const graphArgs: unknown[] = xRange ? [fn, xRange[0], xRange[1]] : [fn];
-
-  return board.create('functiongraph', graphArgs, {
-    strokeColor: s.color ?? COLORS.primary,
+  const el = createFunctionCurve(fn, {
+    color: s.color ?? COLORS.primary,
     strokeWidth: s.strokeWidth ?? 2.5,
     dash: s.dash ?? 0,
-    highlight: false,
-    hasInfobox: false,
+    xRange,
   });
+  board.addElement(el);
+  board.update();
+  return el;
 }
 
 export function highlightPoint(
-  board: JXG.Board,
+  board: CanvasBoard,
   x: number,
   y: number,
   color: string = COLORS.primary,
   label?: string,
-): JXG.GeometryElement {
-  return board.create('point', [x, y], {
-    fixed: true,
+): BoardElement {
+  const el = createPoint(x, y, {
+    color,
     size: 5,
-    fillColor: color,
-    strokeColor: color,
-    name: label ?? '',
-    label: label ? { fontSize: 14, offset: [10, 10] } : { visible: false },
-    highlight: false,
-    showInfobox: false,
+    label: label ?? '',
+    labelOffset: [10, -12],
   });
+  board.addElement(el);
+  board.update();
+  return el;
 }
 
 export { COLORS };

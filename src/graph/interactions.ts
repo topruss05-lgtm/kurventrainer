@@ -1,11 +1,12 @@
-import JXG from 'jsxgraph';
+import type { CanvasBoard, BoardElement } from './canvas-board.js';
+import { createPoint, createPolygon } from './canvas-renderer.js';
 
 export interface SnapTarget {
   x: number;
   y: number;
 }
 
-const SNAP_TOLERANCE = 0.6; // units on x-axis — generous for touch
+const SNAP_TOLERANCE = 0.6; // units — generous for touch
 
 export interface TapResult {
   target: SnapTarget | null;
@@ -14,23 +15,21 @@ export interface TapResult {
 }
 
 export function addTapHandler(
-  board: JXG.Board,
+  board: CanvasBoard,
   targets: SnapTarget[],
   onTap: (result: TapResult) => void,
 ): () => void {
-  // Use JSXGraph's own event system for reliable cross-device handling
   let downCoords: [number, number] | null = null;
 
-  const onDown = (e: Event) => {
-    const coords = getCoords(board, e);
+  const onDown = (e: PointerEvent | TouchEvent) => {
+    const coords = extractCoords(board, e);
     if (coords) downCoords = coords;
   };
 
-  const onUp = (e: Event) => {
-    const coords = getCoords(board, e);
+  const onUp = (e: PointerEvent | TouchEvent) => {
+    const coords = extractCoords(board, e);
     if (!coords || !downCoords) return;
 
-    // Only register as tap if the pointer didn't move much (not a drag/pan)
     const dx = Math.abs(coords[0] - downCoords[0]);
     const dy = Math.abs(coords[1] - downCoords[1]);
     if (dx > 0.5 || dy > 0.5) {
@@ -42,14 +41,9 @@ export function addTapHandler(
     const [bx, by] = coords;
     const closest = findClosestTarget(bx, by, targets);
 
-    onTap({
-      target: closest,
-      boardX: bx,
-      boardY: by,
-    });
+    onTap({ target: closest, boardX: bx, boardY: by });
   };
 
-  // Register through JSXGraph for proper coordination with pan/zoom
   board.on('down', onDown);
   board.on('up', onUp);
 
@@ -59,8 +53,7 @@ export function addTapHandler(
   };
 }
 
-function getCoords(board: JXG.Board, e: Event): [number, number] | null {
-  // JSXGraph's event system passes the raw event; extract position
+function extractCoords(board: CanvasBoard, e: PointerEvent | TouchEvent): [number, number] | null {
   let clientX: number;
   let clientY: number;
 
@@ -69,9 +62,6 @@ function getCoords(board: JXG.Board, e: Event): [number, number] | null {
     if (!touch) return null;
     clientX = touch.clientX;
     clientY = touch.clientY;
-  } else if (e instanceof MouseEvent) {
-    clientX = e.clientX;
-    clientY = e.clientY;
   } else if (e instanceof PointerEvent) {
     clientX = e.clientX;
     clientY = e.clientY;
@@ -79,12 +69,7 @@ function getCoords(board: JXG.Board, e: Event): [number, number] | null {
     return null;
   }
 
-  const rect = board.containerObj.getBoundingClientRect();
-  const absX = clientX - rect.left;
-  const absY = clientY - rect.top;
-
-  const coords = new JXG.Coords(JXG.COORDS_BY_SCREEN, [absX, absY], board);
-  return [coords.usrCoords[1], coords.usrCoords[2]];
+  return board.toMathCoords(clientX, clientY);
 }
 
 function findClosestTarget(x: number, y: number, targets: SnapTarget[]): SnapTarget | null {
@@ -92,7 +77,6 @@ function findClosestTarget(x: number, y: number, targets: SnapTarget[]): SnapTar
   let minDist = SNAP_TOLERANCE;
 
   for (const t of targets) {
-    // Use both x and y distance for better accuracy
     const dist = Math.sqrt((t.x - x) ** 2 + (t.y - y) ** 2);
     if (dist < minDist) {
       minDist = dist;
@@ -104,29 +88,28 @@ function findClosestTarget(x: number, y: number, targets: SnapTarget[]): SnapTar
 }
 
 export function addCurveTracker(
-  board: JXG.Board,
+  board: CanvasBoard,
   fn: (x: number) => number,
   color: string = '#0d7377',
 ): () => void {
   const PROXIMITY = 1.5;
 
-  const tracker = board.create('point', [0, 0], {
+  const tracker = createPoint(0, 0, {
+    color,
     size: 4,
-    fillColor: 'white',
-    strokeColor: color,
-    strokeWidth: 2,
-    fixed: true,
-    highlight: false,
-    showInfobox: false,
-    name: '',
-    label: { fontSize: 12, offset: [10, 12] },
-    visible: false,
-  }) as JXG.GeometryElement;
+    label: '',
+    labelOffset: [10, -12],
+  });
+  tracker.visible = false;
+  board.addElement(tracker);
 
-  const hide = () => { tracker.setAttribute({ visible: false }); board.update(); };
+  const hide = () => {
+    tracker.visible = false;
+    board.update();
+  };
 
-  const onMove = (e: Event) => {
-    const coords = getCoords(board, e);
+  const onMove = (e: PointerEvent | TouchEvent) => {
+    const coords = extractCoords(board, e);
     if (!coords) return;
     const [rawX, mouseY] = coords;
     const bb = board.getBoundingBox();
@@ -137,95 +120,121 @@ export function addCurveTracker(
     if (!Number.isFinite(y) || Math.abs(mouseY - y) > PROXIMITY) { hide(); return; }
 
     const fmt = (v: number) => Number.isInteger(v) ? v.toString() : v.toFixed(1);
-    tracker.setPosition(JXG.COORDS_BY_USER, [x, y]);
-    tracker.setName(`(${fmt(x)}|${fmt(y)})`);
-    tracker.setAttribute({ visible: true });
+    tracker.setPosition(x, y);
+    tracker.setLabel(`(${fmt(x)}|${fmt(y)})`);
+    tracker.visible = true;
     board.update();
   };
 
-  const container = board.containerObj;
   board.on('move', onMove);
-  container.addEventListener('mouseleave', hide);
-  container.addEventListener('touchend', hide);
+  board.canvas.addEventListener('mouseleave', hide);
+  board.canvas.addEventListener('touchend', hide);
 
   return () => {
     board.off('move', onMove);
-    container.removeEventListener('mouseleave', hide);
-    container.removeEventListener('touchend', hide);
-    board.removeObject(tracker);
+    board.canvas.removeEventListener('mouseleave', hide);
+    board.canvas.removeEventListener('touchend', hide);
+    board.removeElement(tracker);
   };
 }
 
 export function createIntervalSelector(
-  board: JXG.Board,
+  board: CanvasBoard,
   initialFrom: number,
   initialTo: number,
   color: string = '#0d7377',
 ): { getInterval: () => [number, number]; destroy: () => void } {
-  // Create a hidden segment spanning exactly the board's x-range
-  // so gliders can't be dragged beyond the visible area
-  const boardBB = board.getBoundingBox(); // [xMin, yMax, xMax, yMin]
-  const xMin = Math.ceil(boardBB[0]);
-  const xMax = Math.floor(boardBB[2]);
+  const bb = board.getBoundingBox();
+  const xMin = Math.ceil(bb[0]);
+  const xMax = Math.floor(bb[2]);
+  const top = bb[1];
+  const bottom = bb[3];
 
-  const rail = board.create('segment', [[xMin, 0], [xMax, 0]], {
-    visible: false,
-    fixed: true,
-    highlight: false,
-  } as Record<string, unknown>);
+  // State
+  let fromX = initialFrom;
+  let toX = initialTo;
+  let activeGlider: 'from' | 'to' | null = null;
 
-  const makeGlider = (initial: number, label: string) => {
-    const g = board.create('glider', [initial, 0, rail], {
-      size: 8,
+  // Visual elements
+  const gliderFrom = createPoint(fromX, 0, {
+    color, size: 8, label: 'von', labelOffset: [0, 16],
+  });
+  const gliderTo = createPoint(toX, 0, {
+    color, size: 8, label: 'bis', labelOffset: [0, 16],
+  });
+
+  const polygon = createPolygon(
+    [
+      () => [fromX, bottom] as [number, number],
+      () => [toX, bottom] as [number, number],
+      () => [toX, top] as [number, number],
+      () => [fromX, top] as [number, number],
+    ],
+    {
       fillColor: color,
-      strokeColor: color,
-      name: label,
-      label: { fontSize: 12, offset: [0, -20] },
-      showInfobox: false,
-    } as Record<string, unknown>) as JXG.GeometryElement & { X(): number };
+      fillOpacity: 0.15,
+      borderColor: color,
+      borderWidth: 1.5,
+      borderDash: 2,
+    },
+  );
 
-    // Snap to integer, clamp to board range on every drag
-    g.on('drag', () => {
-      const snapped = Math.max(xMin, Math.min(xMax, Math.round(g.X() * 2) / 2));
-      (g as unknown as { setPosition(t: number, c: number[]): void })
-        .setPosition(JXG.COORDS_BY_USER, [snapped, 0]);
-      board.update();
-    });
-    return g;
+  const elements: BoardElement[] = [polygon, gliderFrom, gliderTo];
+  elements.forEach(el => board.addElement(el));
+  board.update();
+
+  // Drag handling
+  const GLIDER_HIT_PX = 25;
+
+  const onDown = (e: PointerEvent | TouchEvent) => {
+    const coords = extractCoords(board, e);
+    if (!coords) return;
+    const [mx] = coords;
+    const fromSx = board.toScreenX(fromX);
+    const toSx = board.toScreenX(toX);
+    const pointerSx = board.toScreenX(mx);
+
+    if (Math.abs(pointerSx - fromSx) < GLIDER_HIT_PX) {
+      activeGlider = 'from';
+      e.preventDefault?.();
+    } else if (Math.abs(pointerSx - toSx) < GLIDER_HIT_PX) {
+      activeGlider = 'to';
+      e.preventDefault?.();
+    }
   };
 
-  const gliderFrom = makeGlider(initialFrom, 'von');
-  const gliderTo   = makeGlider(initialTo,   'bis');
+  const onMove = (e: PointerEvent | TouchEvent) => {
+    if (!activeGlider) return;
+    const coords = extractCoords(board, e);
+    if (!coords) return;
 
-  // Shaded area between gliders
-  const top = boardBB[1];
-  const bottom = boardBB[3];
+    const snapped = Math.max(xMin, Math.min(xMax, Math.round(coords[0] * 2) / 2));
+    if (activeGlider === 'from') {
+      fromX = snapped;
+      gliderFrom.setPosition(snapped, 0);
+    } else {
+      toX = snapped;
+      gliderTo.setPosition(snapped, 0);
+    }
+    board.update();
+  };
 
-  const polygon = board.create('polygon', [
-    [() => gliderFrom.X(), bottom],
-    [() => gliderTo.X(), bottom],
-    [() => gliderTo.X(), top],
-    [() => gliderFrom.X(), top],
-  ], {
-    fillColor: color,
-    fillOpacity: 0.15,
-    borders: { strokeColor: color, strokeWidth: 1.5, dash: 2 },
-    vertices: { visible: false },
-    fixed: true,
-    highlight: false,
-  } as Record<string, unknown>);
+  const onUp = () => {
+    activeGlider = null;
+  };
+
+  board.on('down', onDown);
+  board.on('move', onMove);
+  board.on('up', onUp);
 
   return {
-    getInterval: () => {
-      const a = gliderFrom.X();
-      const b = gliderTo.X();
-      return a < b ? [a, b] : [b, a];
-    },
+    getInterval: () => fromX < toX ? [fromX, toX] : [toX, fromX],
     destroy: () => {
-      board.removeObject(polygon as JXG.GeometryElement);
-      board.removeObject(gliderTo as JXG.GeometryElement);
-      board.removeObject(gliderFrom as JXG.GeometryElement);
-      board.removeObject(rail as JXG.GeometryElement);
+      board.off('down', onDown);
+      board.off('move', onMove);
+      board.off('up', onUp);
+      elements.forEach(el => board.removeElement(el));
+      board.update();
     },
   };
 }

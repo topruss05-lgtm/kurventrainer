@@ -47,7 +47,7 @@ export function renderReverseInference(
   feedbackDiv.className = 'hidden';
 
   const selectedPoints: Array<{ x: number; y: number }> = [];
-  const pointMarkers: JXG.GeometryElement[] = [];
+  const pointMarkers: import('../graph/canvas-board.js').BoardElement[] = [];
   let answered = false;
 
   // Snap targets are the x-values from exercise targets, evaluated on the given function
@@ -68,7 +68,7 @@ export function renderReverseInference(
     if (selectedPoints.length >= exercise.targets.length) {
       selectedPoints.shift();
       const old = pointMarkers.shift();
-      if (old) board.removeObject(old);
+      if (old) board.removeElement(old);
     }
 
     selectedPoints.push({ x, y });

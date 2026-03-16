@@ -11,7 +11,7 @@ export function renderGraphAssignment(
   exercise: GraphAssignmentExercise,
   onComplete: () => void,
 ): (() => void) | null {
-  const boards: JXG.Board[] = [];
+  const boards: import('../graph/canvas-board.js').CanvasBoard[] = [];
 
   const prompt = document.createElement('h3');
   prompt.className = 'text-lg font-semibold mb-4';

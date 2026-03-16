@@ -1,42 +1,27 @@
-import JXG from 'jsxgraph';
+import { CanvasBoard, type BoardOptions } from './canvas-board.js';
 
-export interface BoardOptions {
-  boundingBox?: [number, number, number, number]; // [xMin, yMax, xMax, yMin]
-  showNavigation?: boolean;
-  showGrid?: boolean;
-  keepAspectRatio?: boolean;
-}
+export type { BoardOptions };
+export type { CanvasBoard };
 
 const DEFAULTS: Required<BoardOptions> = {
   boundingBox: [-5, 10, 5, -10],
-  showNavigation: false,
   showGrid: true,
+  axis: true,
+  height: 350,
   keepAspectRatio: false,
 };
 
 export function createBoard(
   container: HTMLElement,
   options: BoardOptions = {},
-): JXG.Board {
+): CanvasBoard {
   const opts = { ...DEFAULTS, ...options };
 
   const boardDiv = document.createElement('div');
-  boardDiv.id = `jxg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   boardDiv.className = 'w-full rounded-xl overflow-hidden';
-  boardDiv.style.minHeight = '300px';
-  boardDiv.style.height = '350px';
   container.appendChild(boardDiv);
 
-  const board = JXG.JSXGraph.initBoard(boardDiv, {
-    boundingbox: opts.boundingBox,
-    axis: true,
-    showNavigation: opts.showNavigation,
-    showCopyright: false,
-    keepAspectRatio: opts.keepAspectRatio,
-    pan: { enabled: true, needTwoFingers: true },
-  } as unknown as Record<string, unknown>);
-
-  return board;
+  return new CanvasBoard(boardDiv, opts);
 }
 
 export function calcBoundingBox(
@@ -72,6 +57,6 @@ export function calcBoundingBox(
   return [xRange[0] - 0.5, yMax, xRange[1] + 0.5, yMin];
 }
 
-export function destroyBoard(board: JXG.Board): void {
-  JXG.JSXGraph.freeBoard(board);
+export function destroyBoard(board: CanvasBoard): void {
+  board.destroy();
 }

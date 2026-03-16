@@ -171,13 +171,6 @@
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* JSXGraph board overrides */
-  .jxgbox {
-    border-radius: 0.75rem !important;
-    border: 1px solid var(--color-border) !important;
-    box-shadow: var(--shadow-graph-inset) !important;
-    background: var(--color-surface-inset) !important;
-  }
 }
 
 /* ─── Animations ─── */
