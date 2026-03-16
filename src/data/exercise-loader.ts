@@ -47,7 +47,8 @@ export function getAvailableDifficulties(moduleId: ModuleId, type: ExerciseType)
       diffs.add(e.difficulty);
     }
   }
-  return [...diffs];
+  const ORDER: Difficulty[] = ['einfuehrung', 'uebung', 'herausforderung'];
+  return ORDER.filter(d => diffs.has(d));
 }
 
 export function getExerciseById(id: string): Exercise | undefined {
