@@ -29,7 +29,9 @@ export function renderReverseInference(
     : exercise.derivatives?.second?.fn ?? exercise.function.fn;
 
   const board = createBoard(graphContainer, { boundingBox: calcBoundingBox([fn]) });
-  plotFunction(board, fn);
+  const bbR = board.getBoundingBox();
+  const xRangeR: [number, number] = [Math.ceil(bbR[0]), Math.floor(bbR[2])];
+  plotFunction(board, fn, undefined, 0, xRangeR);
   const removeTracker = addCurveTracker(board, fn);
 
   const selectedInfo = document.createElement('p');

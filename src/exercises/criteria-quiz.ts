@@ -106,7 +106,7 @@ export function renderCriteriaQuiz(
           graphContainer.appendChild(graphLabel);
 
           board = createBoard(graphContainer, { boundingBox: [-4, 8, 4, -8] });
-          plotFunction(board, exercise.visualExample.function.fn);
+          plotFunction(board, exercise.visualExample.function.fn, undefined, 0, [-4, 4]);
           const x = exercise.visualExample.highlightX;
           const y = exercise.visualExample.function.fn(x);
           highlightPoint(board, x, y, COLORS.secondary);

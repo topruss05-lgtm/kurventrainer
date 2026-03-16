@@ -22,10 +22,12 @@ export function plotFunction(
   fn: (x: number) => number,
   style?: PlotStyle,
   styleIndex: number = 0,
+  xRange?: [number, number],
 ): JXG.GeometryElement {
   const s = style ?? DEFAULT_STYLES[styleIndex % DEFAULT_STYLES.length];
+  const graphArgs: unknown[] = xRange ? [fn, xRange[0], xRange[1]] : [fn];
 
-  return board.create('functiongraph', [fn], {
+  return board.create('functiongraph', graphArgs, {
     strokeColor: s.color ?? COLORS.primary,
     strokeWidth: s.strokeWidth ?? 2.5,
     dash: s.dash ?? 0,

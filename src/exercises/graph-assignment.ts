@@ -60,7 +60,9 @@ export function renderGraphAssignment(
     graphsContainer.appendChild(wrapper);
 
     const board = createBoard(graphDiv, { boundingBox: calcBoundingBox(exercise.graphs.map(g => g.function.fn)) });
-    plotFunction(board, graph.function.fn, { color: LABEL_COLORS[index], strokeWidth: 2.5 });
+    const bbGA = board.getBoundingBox();
+    const xRangeGA: [number, number] = [Math.ceil(bbGA[0]), Math.floor(bbGA[2])];
+    plotFunction(board, graph.function.fn, { color: LABEL_COLORS[index], strokeWidth: 2.5 }, 0, xRangeGA);
     boards.push(board);
   });
 

@@ -12,7 +12,9 @@ export function renderTrueFalse(
   graphContainer.className = 'mb-4';
 
   const board = createBoard(graphContainer, { boundingBox: calcBoundingBox([exercise.function.fn]) });
-  plotFunction(board, exercise.function.fn);
+  const bbTF = board.getBoundingBox();
+  const xRangeTF: [number, number] = [Math.ceil(bbTF[0]), Math.floor(bbTF[2])];
+  plotFunction(board, exercise.function.fn, undefined, 0, xRangeTF);
 
   const statementEl = document.createElement('div');
   statementEl.className = 'p-4 rounded-xl border mb-4';

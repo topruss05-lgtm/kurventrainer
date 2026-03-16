@@ -35,7 +35,9 @@ function renderPointExercise(
   container.append(prompt, graphContainer);
 
   const board = createBoard(graphContainer, { boundingBox: calcBoundingBox([exercise.function.fn]) });
-  plotFunction(board, exercise.function.fn);
+  const bb0 = board.getBoundingBox();
+  const xRange0: [number, number] = [Math.ceil(bb0[0]), Math.floor(bb0[2])];
+  plotFunction(board, exercise.function.fn, undefined, 0, xRange0);
   const removeTracker = addCurveTracker(board, exercise.function.fn);
 
   const feedbackDiv = document.createElement('div');
@@ -143,7 +145,9 @@ function renderIntervalExercise(
   container.append(prompt, hint, graphContainer);
 
   const board = createBoard(graphContainer, { boundingBox: calcBoundingBox([exercise.function.fn]) });
-  plotFunction(board, exercise.function.fn);
+  const bb1 = board.getBoundingBox();
+  const xRange1: [number, number] = [Math.ceil(bb1[0]), Math.floor(bb1[2])];
+  plotFunction(board, exercise.function.fn, undefined, 0, xRange1);
 
   const intervals = exercise.intervals ?? [];
   // Start gliders at a neutral position
