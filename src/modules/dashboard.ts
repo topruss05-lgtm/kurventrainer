@@ -144,57 +144,6 @@ export function renderDashboard(container: HTMLElement): (() => void) | null {
   cheatBtn.addEventListener('mouseleave', () => { cheatArrow.style.transform = ''; });
   cheatBtn.addEventListener('click', () => navigate({ page: 'cheatsheet' }));
 
-  // Explorer link
-  const explorerBtn = document.createElement('button');
-  explorerBtn.className = 'card card-interactive w-full text-left relative overflow-hidden animate-slide-up';
-  explorerBtn.style.animationDelay = `${MODULE_CONFIGS.length * 70 + 80}ms`;
-  explorerBtn.style.borderLeft = '4px solid var(--color-primary)';
-  explorerBtn.style.marginTop = '0.75rem';
-  explorerBtn.style.display = 'flex';
-  explorerBtn.style.alignItems = 'center';
-  explorerBtn.style.gap = '1rem';
-
-  const explorerIcon = document.createElement('span');
-  explorerIcon.style.cssText = `
-    display: flex; align-items: center; justify-content: center;
-    width: 2.5rem; height: 2.5rem; border-radius: 0.625rem; flex-shrink: 0;
-    background: var(--color-primary-light); color: var(--color-primary);
-    font-size: 1.2rem; font-weight: bold;
-  `;
-  explorerIcon.textContent = '\u223F';
-
-  const explorerText = document.createElement('div');
-  const explorerTitle = document.createElement('span');
-  explorerTitle.className = 'font-semibold';
-  explorerTitle.textContent = 'Explorer: f \u2194 f\u2032 \u2194 f\u2033';
-  const explorerSub = document.createElement('span');
-  explorerSub.className = 'text-sm block';
-  explorerSub.style.color = 'var(--color-ink-muted)';
-  explorerSub.textContent = 'Zusammenh\u00e4nge interaktiv erkunden';
-  explorerText.append(explorerTitle, explorerSub);
-
-  const explorerArrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  explorerArrowSvg.setAttribute('width', '20');
-  explorerArrowSvg.setAttribute('height', '20');
-  explorerArrowSvg.setAttribute('viewBox', '0 0 24 24');
-  explorerArrowSvg.setAttribute('fill', 'none');
-  explorerArrowSvg.setAttribute('stroke', 'currentColor');
-  explorerArrowSvg.setAttribute('stroke-width', '2');
-  explorerArrowSvg.setAttribute('stroke-linecap', 'round');
-  explorerArrowSvg.setAttribute('stroke-linejoin', 'round');
-  const explorerArrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  explorerArrowPath.setAttribute('d', 'M9 18l6-6-6-6');
-  explorerArrowSvg.appendChild(explorerArrowPath);
-
-  const explorerArrow = document.createElement('span');
-  explorerArrow.style.cssText = 'margin-left: auto; color: var(--color-ink-muted); transition: transform 0.2s; display: flex;';
-  explorerArrow.appendChild(explorerArrowSvg);
-
-  explorerBtn.append(explorerIcon, explorerText, explorerArrow);
-  explorerBtn.addEventListener('mouseenter', () => { explorerArrow.style.transform = 'translateX(4px)'; });
-  explorerBtn.addEventListener('mouseleave', () => { explorerArrow.style.transform = ''; });
-  explorerBtn.addEventListener('click', () => navigate({ page: 'explorer' }));
-
   // Reset button
   const resetBtn = document.createElement('button');
   resetBtn.className = 'w-full mt-2 p-3 text-sm cursor-pointer transition-colors';
@@ -209,6 +158,6 @@ export function renderDashboard(container: HTMLElement): (() => void) | null {
     }
   });
 
-  container.append(header, grid, cheatBtn, explorerBtn, resetBtn);
+  container.append(header, grid, cheatBtn, resetBtn);
   return null;
 }

@@ -4,7 +4,6 @@ import { renderDashboard } from './modules/dashboard.js';
 import { renderModuleView } from './modules/module-view.js';
 import { renderExerciseView } from './modules/exercise-view.js';
 import { renderCheatsheet } from './modules/cheatsheet.js';
-import { renderExplorer } from './modules/explorer.js';
 
 const app = document.getElementById('app')!;
 
@@ -30,9 +29,6 @@ function renderRoute(route: Route): void {
       break;
     case 'cheatsheet':
       destroyCurrent = renderCheatsheet(app);
-      break;
-    case 'explorer':
-      destroyCurrent = renderExplorer(app);
       break;
   }
 }

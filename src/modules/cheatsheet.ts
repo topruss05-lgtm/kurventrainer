@@ -1,7 +1,7 @@
 import { navigate } from '../router.js';
 import { createBoard, destroyBoard, type CanvasBoard } from '../graph/board-factory.js';
-import { plotFunction, highlightPoint, COLORS } from '../graph/function-plotter.js';
-import { createFunctionCurve, createAreaFill, createLine, createText, createPoint, createIntervalBand } from '../graph/canvas-renderer.js';
+import { COLORS } from '../graph/function-plotter.js';
+import { createFunctionCurve, createLine, createText, createPoint, createIntervalBand } from '../graph/canvas-renderer.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -613,115 +613,571 @@ function buildMonotonieExtremstellenSection(
   return [boardF, boardF1];
 }
 
-// ── Wendestellen builder (standalone) ────────────────────────────────
+// ── Combined Wendestellen + Krümmung builder ────────────────────────
 
-function buildWendestellenGraphs(container: HTMLElement): CanvasBoard[] {
+type WZone = 'linkskurve' | 'rechtskurve' | 'wp' | 'none';
+
+const WZONE_COLORS: Record<string, string> = {
+  linkskurve:   '#2d8a4e', // Waldgrün (f'' > 0)
+  rechtskurve:  '#c4582a', // Ziegelrot (f'' < 0)
+  wp:           '#7c5cbf', // Lila (Wendepunkt)
+};
+
+interface WRuleCard { el: HTMLElement; zone: WZone }
+
+function buildWendestellenSection(
+  _container: HTMLElement,
+  graphContainer: HTMLElement,
+  rulesContainer: HTMLElement,
+  nachweisContainer: HTMLElement,
+): CanvasBoard[] {
   const f = (x: number) => x**3 - 3*x**2 + 2;
   const f1 = (x: number) => 3*x**2 - 6*x;
   const f2 = (x: number) => 6*x - 6;
   const cleanups: (() => void)[] = [];
 
-  addLabel(container, 'Graph von f  \u2014  Bewege die Maus \u00fcber den Graphen!', COLORS.primary);
-  const boardF = createBoard(container, { boundingBox: [-1.5, 4, 3.5, -3], keepAspectRatio: true, height: 280 });
-  plotFunction(boardF, f);
-  highlightPoint(boardF, 1, 0, COLORS.tertiary, 'WP (1|0)');
-  boardF.addElement(createFunctionCurve((x: number) => -3 * (x - 1), { color: COLORS.tertiary, dash: 2, strokeWidth: 1.5 }));
-  boardF.addElement(createLine([1, -100], [1, 100], { color: '#d0ceca', dash: 2 }));
-  boardF.addElement(createText(-0.5, 3.0, '\u2322 Rechtskurve', { fontSize: 11, color: ZONE_COLORS.fallend, background: BG }));
-  boardF.addElement(createText(2.2, -2.0, '\u2323 Linkskurve', { fontSize: 11, color: COLORS.primary, background: BG }));
+  const wCriticals: Array<{ x: number; zone: WZone }> = [
+    { x: 1, zone: 'wp' },
+  ];
+  const wZoneX: Record<WZone, number> = {
+    linkskurve: 2.5, rechtskurve: -0.5, wp: 1, none: 0,
+  };
+
+  // ─ Board 1: f (top) ─
+  const COLOR_F = '#4a3070';
+  const COLOR_F1 = '#1a6b6b';
+  const COLOR_F2 = '#7c5cbf';
+  addLabel(graphContainer, 'Graph von f  \u2014  Bewege die Maus oder klicke rechts', COLOR_F);
+  const boardF = createBoard(graphContainer, {
+    boundingBox: [-1.5, 5.5, 3.5, -4.5],
+    height: 220,
+  });
+  const GRAY = '#c0bdb8';
+  type BE = import('../graph/canvas-board.js').BoardElement;
+
+  interface WSeg { colored: BE; gray: BE; zone: WZone; xFrom: number; xTo: number }
+  interface WBand { el: BE; zone: WZone; xFrom: number; xTo: number }
+  interface WPt { colored: BE; zone: WZone }
+
+  const segRanges: Array<{ xRange: [number, number]; zone: WZone }> = [
+    { xRange: [-1.2, 1], zone: 'rechtskurve' },
+    { xRange: [1, 3.2], zone: 'linkskurve' },
+  ];
+  const bandRanges: Array<{ xRange: [number, number]; zone: WZone }> = [
+    { xRange: [-1.5, 1], zone: 'rechtskurve' },
+    { xRange: [1, 3.5], zone: 'linkskurve' },
+  ];
+
+  // Build f-board elements
+  const bandsF: WBand[] = bandRanges.map(r => {
+    const el = createIntervalBand(r.xRange[0], r.xRange[1], { color: WZONE_COLORS[r.zone], opacity: 0.12 });
+    el.visible = false;
+    boardF.addElement(el);
+    return { el, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
+  });
+
+  const segsF: WSeg[] = segRanges.map(r => {
+    const colored = createFunctionCurve(f, { color: COLOR_F, strokeWidth: 2.5, xRange: r.xRange });
+    const gray = createFunctionCurve(f, { color: GRAY, strokeWidth: 2.5, xRange: r.xRange });
+    colored.visible = false;
+    boardF.addElement(gray);
+    boardF.addElement(colored);
+    return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
+  });
+
+  const ptsF: WPt[] = [
+    { colored: createPoint(1, 0, { color: HIGHLIGHT, size: 5, label: 'WP (1|0)' }), zone: 'wp' },
+  ];
+  ptsF.forEach(p => { p.colored.visible = false; boardF.addElement(p.colored); });
+  boardF.addElement(createText(-0.5, 3.0, '\u2322 Rechtskurve', { fontSize: 11, color: WZONE_COLORS.rechtskurve, background: BG }));
+  boardF.addElement(createText(2.2, -2.0, '\u2323 Linkskurve', { fontSize: 11, color: WZONE_COLORS.linkskurve, background: BG }));
   boardF.update();
 
-  addLabel(container, "Graph von f''  \u2014  Nullstelle mit VZW \u2192 Wendestelle von f", COLORS.tertiary);
-  const boardF2 = createBoard(container, { boundingBox: [-1.5, 12, 3.5, -10], height: 200 });
-  plotFunction(boardF2, f2, undefined, 2);
-  boardF2.addElement(createAreaFill(f2, -1.5, 1, { color: ZONE_COLORS.fallend, opacity: 0.15 }));
-  boardF2.addElement(createAreaFill(f2, 1, 3.5, { color: COLORS.primary, opacity: 0.15 }));
-  boardF2.addElement(createLine([1, -100], [1, 100], { color: '#d0ceca', dash: 2 }));
-  highlightPoint(boardF2, 1, 0, COLORS.tertiary, "f'' = 0");
-  boardF2.addElement(createText(-0.3, -5, "f'' < 0\nRechtskurve", { fontSize: 11, color: ZONE_COLORS.fallend, background: BG }));
-  boardF2.addElement(createText(2.2, 6, "f'' > 0\nLinkskurve", { fontSize: 11, color: COLORS.primary, background: BG }));
+  // ─ Board 2: f' (middle) ─
+  addLabel(graphContainer, "Graph von f'", COLOR_F1);
+  const boardF1 = createBoard(graphContainer, {
+    boundingBox: [-1.5, 5, 3.5, -4],
+    height: 110,
+  });
+
+  const segRangesF1: Array<{ xRange: [number, number]; zone: WZone }> = [
+    { xRange: [-1.2, 1], zone: 'rechtskurve' },
+    { xRange: [1, 3.2], zone: 'linkskurve' },
+  ];
+
+  const bandsF1: WBand[] = bandRanges.map(r => {
+    const el = createIntervalBand(r.xRange[0], r.xRange[1], { color: WZONE_COLORS[r.zone], opacity: 0.12 });
+    el.visible = false;
+    boardF1.addElement(el);
+    return { el, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
+  });
+
+  const segsF1: WSeg[] = segRangesF1.map(r => {
+    const colored = createFunctionCurve(f1, { color: COLOR_F1, strokeWidth: 2, xRange: r.xRange });
+    const gray = createFunctionCurve(f1, { color: GRAY, strokeWidth: 2, xRange: r.xRange });
+    colored.visible = false;
+    boardF1.addElement(gray);
+    boardF1.addElement(colored);
+    return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
+  });
+
+  // f' has a minimum at x=1 → that IS the Wendepunkt of f
+  const ptsF1: WPt[] = [
+    { colored: createPoint(1, -3, { color: HIGHLIGHT, size: 5, label: "f' Extremum \u2192 WP von f" }), zone: 'wp' },
+  ];
+  ptsF1.forEach(p => { p.colored.visible = false; boardF1.addElement(p.colored); });
+  boardF1.update();
+
+  // ─ Board 3: f'' (bottom) ─
+  addLabel(graphContainer, "Graph von f''", COLOR_F2);
+  const boardF2 = createBoard(graphContainer, {
+    boundingBox: [-1.5, 12, 3.5, -10],
+    height: 110,
+  });
+
+  const segRangesF2: Array<{ xRange: [number, number]; zone: WZone }> = [
+    { xRange: [-1.2, 1], zone: 'rechtskurve' },
+    { xRange: [1, 3.2], zone: 'linkskurve' },
+  ];
+
+  const bandsF2: WBand[] = bandRanges.map(r => {
+    const el = createIntervalBand(r.xRange[0], r.xRange[1], { color: WZONE_COLORS[r.zone], opacity: 0.12 });
+    el.visible = false;
+    boardF2.addElement(el);
+    return { el, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
+  });
+
+  const segsF2: WSeg[] = segRangesF2.map(r => {
+    const colored = createFunctionCurve(f2, { color: COLOR_F2, strokeWidth: 2, xRange: r.xRange });
+    const gray = createFunctionCurve(f2, { color: GRAY, strokeWidth: 2, xRange: r.xRange });
+    colored.visible = false;
+    boardF2.addElement(gray);
+    boardF2.addElement(colored);
+    return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
+  });
+
+  const ptsF2: WPt[] = [
+    { colored: createPoint(1, 0, { color: HIGHLIGHT, size: 5, label: "f'' = 0, VZW" }), zone: 'wp' },
+  ];
+  ptsF2.forEach(p => { p.colored.visible = false; boardF2.addElement(p.colored); });
+  boardF2.addElement(createText(-0.3, -5, "f'' < 0", { fontSize: 11, color: WZONE_COLORS.rechtskurve, background: BG }));
+  boardF2.addElement(createText(2.2, 6, "f'' > 0", { fontSize: 11, color: WZONE_COLORS.linkskurve, background: BG }));
   boardF2.update();
 
-  // Tangent hover
+  // ─ Graph state control (3 boards) ─
+  const allSegs = [...segsF, ...segsF1, ...segsF2];
+  const allBands = [...bandsF, ...bandsF1, ...bandsF2];
+  const allPts = [...ptsF, ...ptsF1, ...ptsF2];
+
+  function updateAllBoards(): void {
+    boardF.update(); boardF1.update(); boardF2.update();
+  }
+
+  function setGraphState(mode: 'blank' | 'zone' | 'segment' | 'point', zone?: WZone, segIndex?: number): void {
+    if (mode === 'blank') {
+      for (const s of allSegs) { s.colored.visible = true; s.gray.visible = false; }
+      for (const b of allBands) b.el.visible = false;
+      for (const p of allPts) p.colored.visible = false;
+    } else if (mode === 'segment' && segIndex !== undefined) {
+      const activeZone = segRanges[segIndex].zone;
+      for (const s of allSegs) {
+        const match = s.zone === activeZone;
+        s.colored.visible = match;
+        s.gray.visible = !match;
+      }
+      for (const b of allBands) b.el.visible = false;
+      for (const p of allPts) p.colored.visible = false;
+    } else if (mode === 'point' && zone) {
+      for (const s of allSegs) { s.colored.visible = false; s.gray.visible = true; }
+      for (const b of allBands) b.el.visible = false;
+      for (const p of allPts) p.colored.visible = p.zone === zone;
+    } else if (mode === 'zone' && zone) {
+      for (const s of allSegs) {
+        s.colored.visible = s.zone === zone;
+        s.gray.visible = s.zone !== zone;
+      }
+      for (const b of allBands) b.el.visible = false;
+      for (const p of allPts) p.colored.visible = false;
+    }
+    updateAllBoards();
+  }
+
+  function getSegIndex(mx: number): number | null {
+    for (let i = 0; i < segRanges.length; i++) {
+      const r = segRanges[i];
+      if (mx >= r.xRange[0] && mx <= r.xRange[1]) return i;
+    }
+    return null;
+  }
+
+  // ─ Interactive elements (tangent on f, tangent on f', dot on f'') ─
   const tangentLine = createLine([0, 0], [0, 0], { color: '#1a1a2e', strokeWidth: 1.8, dash: 1 });
   tangentLine.visible = false;
   boardF.addElement(tangentLine);
   const tangentDot = createPoint(0, 0, { color: '#1a1a2e', size: 5 });
   tangentDot.visible = false;
   boardF.addElement(tangentDot);
-  const derivDot = createPoint(0, 0, { color: COLORS.tertiary, size: 6, label: '' });
-  derivDot.visible = false;
-  boardF2.addElement(derivDot);
-  const derivVLine = createLine([0, -1000], [0, 1000], { color: COLORS.tertiary, dash: 1 });
-  derivVLine.visible = false;
-  boardF2.addElement(derivVLine);
+  // f' tangent + dot
+  const f1TangentLine = createLine([0, 0], [0, 0], { color: '#1a1a2e', strokeWidth: 1.5, dash: 1 });
+  f1TangentLine.visible = false;
+  boardF1.addElement(f1TangentLine);
+  const f1Dot = createPoint(0, 0, { color: COLORS.secondary, size: 6, label: '' });
+  f1Dot.visible = false;
+  boardF1.addElement(f1Dot);
+  // f'' tracker dot
+  const f2Dot = createPoint(0, 0, { color: COLORS.tertiary, size: 6, label: '' });
+  f2Dot.visible = false;
+  boardF2.addElement(f2Dot);
 
-  const hide = () => {
-    tangentLine.visible = false; tangentDot.visible = false;
-    derivDot.visible = false; derivVLine.visible = false;
-    boardF.update(); boardF2.update();
-  };
+  function showAtX(mx: number): void {
+    const y = f(mx);
+    const slope = f1(mx);
+    if (!Number.isFinite(y) || !Number.isFinite(slope)) return;
+    // Tangent on f
+    const bb = boardF.getBoundingBox();
+    tangentLine.setEndpoints([bb[0], y + slope * (bb[0] - mx)], [bb[2], y + slope * (bb[2] - mx)]);
+    tangentLine.visible = true;
+    tangentDot.setPosition(mx, y);
+    tangentDot.visible = true;
+    // Tangent on f' (slope = f''(x))
+    const dy1 = f1(mx);
+    const slopeF1 = f2(mx);
+    const bb1 = boardF1.getBoundingBox();
+    f1TangentLine.setEndpoints(
+      [bb1[0], dy1 + slopeF1 * (bb1[0] - mx)],
+      [bb1[2], dy1 + slopeF1 * (bb1[2] - mx)],
+    );
+    f1TangentLine.visible = true;
+    f1Dot.setPosition(mx, dy1);
+    f1Dot.setLabel(Math.abs(dy1) < 0.05 ? "f' = 0" : `f' = ${dy1.toFixed(1)}`);
+    f1Dot.visible = true;
+    // f'' dot
+    const dy2 = f2(mx);
+    f2Dot.setPosition(mx, dy2);
+    f2Dot.setLabel(Math.abs(dy2) < 0.05 ? "f'' = 0" : `f'' = ${dy2.toFixed(1)}`);
+    f2Dot.visible = true;
+    updateAllBoards();
+  }
+
+  function hideGraphics(): void {
+    tangentLine.visible = false;
+    tangentDot.visible = false;
+    f1TangentLine.visible = false;
+    f1Dot.visible = false;
+    f2Dot.visible = false;
+    updateAllBoards();
+  }
+
+  // ─ Rule cards ─
+  const wRuleCards: WRuleCard[] = [];
+  let activeClickZone: WZone | null = null;
+
+  function makeWRuleCard(title: string, items: string[], zone: WZone): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'card mb-2 cursor-pointer';
+    el.style.cssText = `
+      padding: 0.625rem 0.875rem; border-left: 3px solid transparent;
+      transition: border-color 0.15s, background-color 0.15s, opacity 0.15s;
+    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'text-sm';
+    h3.style.cssText = `
+      font-family: var(--font-display); font-weight: 600;
+      transition: font-weight 0.15s;
+    `;
+    h3.textContent = title;
+
+    const ul = document.createElement('ul');
+    ul.className = 'text-xs mt-0.5';
+    ul.style.color = 'var(--color-ink-secondary)';
+    for (const item of items) {
+      const li = document.createElement('li');
+      li.textContent = `\u2022 ${item}`;
+      ul.appendChild(li);
+    }
+
+    el.append(h3, ul);
+    wRuleCards.push({ el, zone });
+
+    el.addEventListener('click', () => {
+      if (activeClickZone === zone) {
+        clearAll();
+      } else {
+        activeClickZone = zone;
+        const isIntervalZone = zone === 'linkskurve' || zone === 'rechtskurve';
+        highlightZone(zone);
+        if (isIntervalZone) {
+          setGraphState('zone', zone);
+          hideGraphics();
+        } else {
+          setGraphState('point', zone);
+          showAtX(wZoneX[zone]);
+          f1TangentLine.visible = false;
+          f1Dot.visible = false;
+          f2Dot.visible = false;
+          updateAllBoards();
+        }
+      }
+    });
+
+    return el;
+  }
+
+  rulesContainer.appendChild(makeWRuleCard(
+    'Linkskurve (konvex)',
+    ["f''(x) > 0 f\u00fcr alle x im Intervall"],
+    'linkskurve',
+  ));
+  rulesContainer.appendChild(makeWRuleCard(
+    'Rechtskurve (konkav)',
+    ["f''(x) < 0 f\u00fcr alle x im Intervall"],
+    'rechtskurve',
+  ));
+  rulesContainer.appendChild(makeWRuleCard(
+    'Wendepunkt (WP)',
+    ["f''(x\u2080) = 0 und VZW von f''"],
+    'wp',
+  ));
+
+  // ─ Highlight logic ─
+  function highlightZone(zone: WZone): void {
+    for (const rc of wRuleCards) {
+      if (rc.zone === zone) {
+        rc.el.style.borderLeftColor = HIGHLIGHT;
+        rc.el.style.backgroundColor = HIGHLIGHT_BG;
+        rc.el.style.opacity = '1';
+        const h3 = rc.el.querySelector('h3') as HTMLElement;
+        if (h3) h3.style.fontWeight = '700';
+      } else {
+        rc.el.style.borderLeftColor = 'transparent';
+        rc.el.style.backgroundColor = '';
+        rc.el.style.opacity = '0.3';
+        const h3 = rc.el.querySelector('h3') as HTMLElement;
+        if (h3) h3.style.fontWeight = '600';
+      }
+    }
+    highlightWNachweis(zone);
+  }
+
+  function clearHighlights(): void {
+    for (const rc of wRuleCards) {
+      rc.el.style.borderLeftColor = 'transparent';
+      rc.el.style.backgroundColor = '';
+      rc.el.style.opacity = '';
+      const h3 = rc.el.querySelector('h3') as HTMLElement;
+      if (h3) h3.style.fontWeight = '600';
+    }
+    clearWNachweisHighlight();
+  }
+
+  function clearAll(): void {
+    activeClickZone = null;
+    hideGraphics();
+    clearHighlights();
+    setGraphState('blank');
+  }
+
+  // ─ Nachweis box ─
+  const wNachweisColumns: HTMLElement[] = [];
+  const wNachweisZones: (WZone | 'none')[] = ['wp', 'none'];
+
+  function buildWNachweis(): void {
+    const qt = document.createElement('div');
+    qt.className = 'card';
+    qt.style.padding = '0';
+    qt.style.overflow = 'hidden';
+
+    const qtHeader = document.createElement('div');
+    qtHeader.style.cssText = `
+      padding: 0.625rem 1rem; border-bottom: 1px solid var(--color-border);
+      display: flex; align-items: baseline; gap: 0.5rem;
+    `;
+    const qtTitle = document.createElement('h3');
+    qtTitle.style.cssText = `font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem; color: var(--color-ink);`;
+    qtTitle.textContent = "Nachweis mit f'''";
+    const qtSub = document.createElement('span');
+    qtSub.style.cssText = 'font-size: 0.7rem; color: var(--color-ink-muted);';
+    qtSub.textContent = 'Hinreichende Bedingung';
+    qtHeader.append(qtTitle, qtSub);
+
+    const qtBody = document.createElement('div');
+    qtBody.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--color-border);';
+
+    const conditions: Array<{ premise: string; conclusion: string; zone: WZone | 'none' }> = [
+      { premise: "f''(x\u2080) = 0\nf'''(x\u2080) \u2260 0", conclusion: 'Wendepunkt', zone: 'wp' },
+      { premise: "f''(x\u2080) = 0\nf'''(x\u2080) = 0", conclusion: 'Keine Aussage', zone: 'none' },
+    ];
+
+    for (const c of conditions) {
+      const cell = document.createElement('div');
+      cell.style.cssText = `
+        background: var(--color-surface-card); padding: 0.625rem 0.375rem; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+        transition: background-color 0.15s;
+      `;
+
+      const premise = document.createElement('span');
+      premise.style.cssText = 'font-size: 0.675rem; color: var(--color-ink-secondary); text-align: center; line-height: 1.45; white-space: pre-line;';
+      premise.textContent = c.premise;
+
+      const divider = document.createElement('span');
+      divider.style.cssText = 'width: 1.5rem; height: 1px; background: var(--color-border);';
+
+      const conclusion = document.createElement('span');
+      conclusion.style.cssText = `font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; color: var(--color-ink);`;
+      conclusion.textContent = c.conclusion;
+
+      cell.append(premise, divider, conclusion);
+      qtBody.appendChild(cell);
+      wNachweisColumns.push(cell);
+
+      cell.addEventListener('click', () => {
+        if (c.zone === 'none') {
+          if (activeClickZone === null) { clearAll(); return; }
+          activeClickZone = null;
+          hideGraphics();
+          for (const s of allSegs) { s.colored.visible = false; s.gray.visible = true; }
+          for (const b of allBands) b.el.visible = false;
+          for (const p of allPts) p.colored.visible = false;
+          updateAllBoards();
+          for (const rc of wRuleCards) {
+            rc.el.style.borderLeftColor = 'transparent';
+            rc.el.style.backgroundColor = '';
+            rc.el.style.opacity = '0.3';
+          }
+          highlightWNachweis('none');
+          return;
+        }
+        if (activeClickZone === (c.zone as WZone)) {
+          clearAll();
+        } else {
+          activeClickZone = c.zone as WZone;
+          highlightZone(c.zone as WZone);
+          setGraphState('point', c.zone as WZone);
+          showAtX(wZoneX[c.zone as WZone]);
+          f1TangentLine.visible = false;
+          f1Dot.visible = false;
+          f2Dot.visible = false;
+          updateAllBoards();
+        }
+      });
+    }
+
+    qt.append(qtHeader, qtBody);
+    nachweisContainer.appendChild(qt);
+  }
+
+  function highlightWNachweis(zone: WZone | 'none'): void {
+    wNachweisColumns.forEach((col, i) => {
+      const z = wNachweisZones[i];
+      if (z === zone) {
+        col.style.backgroundColor = HIGHLIGHT_BG;
+        col.style.opacity = '1';
+      } else {
+        col.style.backgroundColor = 'var(--color-surface-card)';
+        col.style.opacity = '0.3';
+      }
+    });
+  }
+
+  function clearWNachweisHighlight(): void {
+    wNachweisColumns.forEach(col => {
+      col.style.backgroundColor = 'var(--color-surface-card)';
+      col.style.opacity = '';
+    });
+  }
+
+  buildWNachweis();
+
+  // ─ Mouse hover on graph ─
+  const SNAP = 0.35;
+
+  const rechtskurveRanges: [number, number][] = [[-1.5, 1]];
+  const linkskurveRanges: [number, number][] = [[1, 3.5]];
+
+  function isInRanges(x: number, ranges: [number, number][]): boolean {
+    return ranges.some(([a, b]) => x >= a && x <= b);
+  }
+
   const onMove = (e: PointerEvent | TouchEvent) => {
+    if (activeClickZone === 'wp') return;
+
     let clientX: number, clientY: number;
     if (typeof TouchEvent !== 'undefined' && e instanceof TouchEvent) {
       const t = e.touches?.[0]; if (!t) return;
       clientX = t.clientX; clientY = t.clientY;
-    } else if (e instanceof PointerEvent) { clientX = e.clientX; clientY = e.clientY; } else return;
+    } else if (e instanceof PointerEvent) {
+      clientX = e.clientX; clientY = e.clientY;
+    } else return;
 
     let [mx] = boardF.toMathCoords(clientX, clientY);
     const bb = boardF.getBoundingBox();
-    if (mx < bb[0] + 0.3 || mx > bb[2] - 0.3) { hide(); return; }
-    // Snap to WP
-    if (Math.abs(mx - 1) < 0.35) mx = 1;
+    if (mx < bb[0] + 0.3 || mx > bb[2] - 0.3) { onLeave(); return; }
 
-    const y = f(mx); const slope = f1(mx);
-    if (!Number.isFinite(y) || !Number.isFinite(slope)) { hide(); return; }
-    tangentLine.setEndpoints([bb[0], y + slope * (bb[0] - mx)], [bb[2], y + slope * (bb[2] - mx)]);
-    tangentLine.visible = true;
-    tangentDot.setPosition(mx, y); tangentDot.visible = true;
-    const dy = f2(mx);
-    derivDot.setPosition(mx, dy);
-    derivDot.setLabel(Math.abs(dy) < 0.05 ? "f'' = 0" : `f'' = ${dy.toFixed(1)}`);
-    derivDot.visible = true;
-    derivVLine.setEndpoints([mx, -1000], [mx, 1000]); derivVLine.visible = true;
-    boardF.update(); boardF2.update();
+    if (activeClickZone === 'rechtskurve' && !isInRanges(mx, rechtskurveRanges)) {
+      hideGraphics(); return;
+    }
+    if (activeClickZone === 'linkskurve' && !isInRanges(mx, linkskurveRanges)) {
+      hideGraphics(); return;
+    }
+
+    // Snap to WP
+    if (!activeClickZone || (activeClickZone !== 'linkskurve' && activeClickZone !== 'rechtskurve')) {
+      for (const cp of wCriticals) {
+        if (Math.abs(mx - cp.x) < SNAP) { mx = cp.x; break; }
+      }
+    }
+
+    // Detect zone
+    const isAtWP = Math.abs(mx - 1) < 0.01;
+
+    if (isAtWP) {
+      setGraphState('point', 'wp');
+      showAtX(mx);
+      f1TangentLine.visible = false;
+      f1Dot.visible = false;
+      f2Dot.visible = false;
+      updateAllBoards();
+      if (!activeClickZone) highlightZone('wp');
+    } else {
+      const idx = getSegIndex(mx);
+      if (idx !== null) {
+        setGraphState('segment', undefined, idx);
+        showAtX(mx);
+        if (!activeClickZone) {
+          const zone = segRanges[idx].zone;
+          highlightZone(zone);
+        }
+      }
+    }
   };
+
+  const onLeave = () => {
+    if (activeClickZone) {
+      const isIntervalZone = activeClickZone === 'linkskurve' || activeClickZone === 'rechtskurve';
+      if (isIntervalZone) {
+        hideGraphics();
+        setGraphState('zone', activeClickZone);
+      }
+      return;
+    }
+    hideGraphics();
+    clearHighlights();
+    setGraphState('blank');
+  };
+
   boardF.on('move', onMove);
-  boardF.canvas.addEventListener('mouseleave', hide);
-  boardF.canvas.addEventListener('touchend', hide);
+  boardF.canvas.addEventListener('mouseleave', onLeave);
+  boardF.canvas.addEventListener('touchend', onLeave);
   cleanups.push(() => {
     boardF.off('move', onMove);
-    boardF.canvas.removeEventListener('mouseleave', hide);
-    boardF.canvas.removeEventListener('touchend', hide);
+    boardF.canvas.removeEventListener('mouseleave', onLeave);
+    boardF.canvas.removeEventListener('touchend', onLeave);
   });
   withCleanup(boardF, cleanups);
 
-  return [boardF, boardF2];
-}
-
-// ── Zusammenhang builder ─────────────────────────────────────────────
-
-function buildZusammenhangGraphs(container: HTMLElement): CanvasBoard[] {
-  const f = (x: number) => x**3 - 3*x;
-  const f1 = (x: number) => 3*x**2 - 3;
-  const f2 = (x: number) => 6*x;
-
-  addLabel(container, "f, f' und f'' gemeinsam", COLORS.primary);
-  const board = createBoard(container, { boundingBox: [-3.5, 10, 3.5, -10] });
-  plotFunction(board, f, undefined, 0);
-  plotFunction(board, f1, undefined, 1);
-  plotFunction(board, f2, undefined, 2);
-  for (const xv of [-1, 0, 1]) {
-    board.addElement(createLine([xv, -100], [xv, 100], { color: '#d0ceca', dash: 2 }));
-  }
-  board.addElement(createText(-2.5, -7.5, "f' = 0 \u2192 Extr.", { fontSize: 11, color: COLORS.secondary, background: BG }));
-  board.addElement(createText(1.0, -7.5, "f' = 0 \u2192 Extr.", { fontSize: 11, color: COLORS.secondary, background: BG }));
-  board.addElement(createText(0.15, 8.5, "f'' = 0 \u2192 WP", { fontSize: 11, color: COLORS.tertiary, background: BG }));
-  board.addElement(createText(2.0, 9.2, 'f', { fontSize: 13, color: COLORS.primary, background: BG }));
-  board.addElement(createText(2.5, 9.2, "f'", { fontSize: 13, color: COLORS.secondary, background: BG }));
-  board.addElement(createText(3.0, 9.2, "f''", { fontSize: 13, color: COLORS.tertiary, background: BG }));
-  board.update();
-  return [board];
+  return [boardF, boardF1, boardF2];
 }
 
 // ── Render ───────────────────────────────────────────────────────────
@@ -786,7 +1242,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     container.appendChild(sectionEl);
   }
 
-  // ─── Section 2: Wendestellen ───
+  // ─── Section 2: Wendestellen & Krümmung (combined, interactive) ───
   {
     const sectionEl = document.createElement('section');
     sectionEl.className = 'mb-8 animate-slide-up';
@@ -799,83 +1255,28 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     heading.textContent = 'Wendestellen & Kr\u00fcmmung';
     sectionEl.appendChild(heading);
 
-    const graphCard = document.createElement('div');
-    graphCard.className = 'card mb-3';
-    graphCard.style.padding = '0.5rem 0.5rem 0.75rem';
-    boards.push(...buildWendestellenGraphs(graphCard));
-    sectionEl.appendChild(graphCard);
-
-    const rules = [
-      { t: 'Notwendige Bedingung', i: ["f''(x\u2080) = 0"] },
-      { t: 'Hinreichende Bedingung', i: ["f''(x\u2080) = 0 und f'''(x\u2080) \u2260 0", "oder: f''(x\u2080) = 0 und VZW von f''"] },
-      { t: 'Linkskurve (konvex)', i: ["f''(x) > 0 \u2014 Graph kr\u00fcmmt sich nach oben"] },
-      { t: 'Rechtskurve (konkav)', i: ["f''(x) < 0 \u2014 Graph kr\u00fcmmt sich nach unten"] },
-    ];
-    for (const r of rules) {
-      const el = document.createElement('div');
-      el.className = 'card mb-2';
-      el.style.padding = '0.75rem 1rem';
-      const title = document.createElement('h3');
-      title.className = 'font-medium mb-1 text-sm';
-      title.textContent = r.t;
-      const ul = document.createElement('ul');
-      ul.className = 'text-xs space-y-0.5';
-      ul.style.color = 'var(--color-ink-secondary)';
-      for (const item of r.i) {
-        const li = document.createElement('li');
-        li.textContent = `\u2022 ${item}`;
-        ul.appendChild(li);
-      }
-      el.append(title, ul);
-      sectionEl.appendChild(el);
+    const grid = document.createElement('div');
+    grid.className = 'grid gap-3';
+    grid.style.gridTemplateColumns = '1fr';
+    if (window.innerWidth >= 768) {
+      grid.style.gridTemplateColumns = '1.4fr 1fr';
+      grid.style.alignItems = 'start';
     }
 
-    container.appendChild(sectionEl);
-  }
-
-  // ─── Section 3: Zusammenh\u00e4nge ───
-  {
-    const sectionEl = document.createElement('section');
-    sectionEl.className = 'mb-8 animate-slide-up';
-    sectionEl.style.animationDelay = '120ms';
-
-    const heading = document.createElement('h2');
-    heading.className = 'text-lg font-semibold mb-3 pb-2 border-b';
-    heading.style.color = 'var(--color-primary)';
-    heading.style.borderColor = 'var(--color-border)';
-    heading.textContent = "Zusammenh\u00e4nge f \u2194 f' \u2194 f''";
-    sectionEl.appendChild(heading);
-
     const graphCard = document.createElement('div');
-    graphCard.className = 'card mb-3';
+    graphCard.className = 'card';
     graphCard.style.padding = '0.5rem 0.5rem 0.75rem';
-    boards.push(...buildZusammenhangGraphs(graphCard));
-    sectionEl.appendChild(graphCard);
 
-    const rules = [
-      { t: "Nullstelle von f' \u2192 Extremstelle von f", i: ["Wo f' die x-Achse schneidet (mit VZW), hat f eine Extremstelle"] },
-      { t: "Extremstelle von f' \u2192 Wendestelle von f", i: ["Wo f' ein Extremum hat, hat f eine Wendestelle"] },
-      { t: "f' > 0 \u2192 f steigt", i: ["Wo f' oberhalb der x-Achse liegt, steigt f"] },
-      { t: "f'' > 0 \u2192 f ist linksgekr\u00fcmmt", i: ["Wo f'' positiv ist, kr\u00fcmmt sich f nach oben"] },
-    ];
-    for (const r of rules) {
-      const el = document.createElement('div');
-      el.className = 'card mb-2';
-      el.style.padding = '0.75rem 1rem';
-      const title = document.createElement('h3');
-      title.className = 'font-medium mb-1 text-sm';
-      title.textContent = r.t;
-      const ul = document.createElement('ul');
-      ul.className = 'text-xs space-y-0.5';
-      ul.style.color = 'var(--color-ink-secondary)';
-      for (const item of r.i) {
-        const li = document.createElement('li');
-        li.textContent = `\u2022 ${item}`;
-        ul.appendChild(li);
-      }
-      el.append(title, ul);
-      sectionEl.appendChild(el);
-    }
+    const rulesDiv = document.createElement('div');
+    const nachweisDiv = document.createElement('div');
+    nachweisDiv.className = 'mt-3';
+
+    boards.push(...buildWendestellenSection(container, graphCard, rulesDiv, nachweisDiv));
+
+    grid.appendChild(graphCard);
+    grid.appendChild(rulesDiv);
+    sectionEl.appendChild(grid);
+    sectionEl.appendChild(nachweisDiv);
 
     container.appendChild(sectionEl);
   }
