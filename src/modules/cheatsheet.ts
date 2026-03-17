@@ -1194,23 +1194,39 @@ function buildWendestellenSection(
 export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   const boards: CanvasBoard[] = [];
 
+  // ─── Back button ───
   const backBtn = document.createElement('button');
-  backBtn.className = 'back-link mb-4';
-  backBtn.textContent = '\u2190 Zur\u00fcck zur \u00dcbersicht';
+  backBtn.className = 'animate-fade-in';
+  backBtn.style.cssText = `
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-size: 0.8rem; color: var(--color-ink-muted); transition: color 0.15s;
+    margin-bottom: 1.5rem; display: inline-flex; align-items: center; gap: 0.375rem;
+  `;
+  backBtn.textContent = '\u2190 \u00dcbersicht';
+  backBtn.addEventListener('mouseenter', () => { backBtn.style.color = 'var(--color-primary)'; });
+  backBtn.addEventListener('mouseleave', () => { backBtn.style.color = 'var(--color-ink-muted)'; });
   backBtn.addEventListener('click', () => navigate({ page: 'dashboard' }));
 
+  // ─── Header ───
+  const header = document.createElement('header');
+  header.className = 'animate-fade-in';
+  header.style.cssText = 'margin-bottom: 2rem;';
+
   const h1 = document.createElement('h1');
-  h1.className = 'text-2xl font-bold mb-6';
+  h1.style.cssText = `
+    font-family: var(--font-display); font-weight: 800; font-size: 1.75rem;
+    letter-spacing: -0.025em; color: var(--color-ink); line-height: 1.2;
+  `;
   h1.textContent = 'Das Wichtigste';
 
   const hint = document.createElement('p');
-  hint.className = 'text-sm p-3 mb-6 rounded-lg border';
-  hint.style.color = 'var(--color-accent-dark)';
-  hint.style.backgroundColor = 'var(--color-accent-light)';
-  hint.style.borderColor = 'var(--color-accent)';
-  hint.textContent = 'Bewege die Maus \u00fcber die Graphen \u2014 die passende Regel wird automatisch hervorgehoben.';
+  hint.style.cssText = `
+    font-size: 0.8rem; color: var(--color-ink-muted); margin-top: 0.375rem;
+  `;
+  hint.textContent = 'Klicke auf eine Regel rechts oder bewege die Maus \u00fcber die Graphen.';
 
-  container.append(backBtn, h1, hint);
+  header.append(h1, hint);
+  container.append(backBtn, header);
 
   // ─── Section 1: Monotonie & Extremstellen (combined, interactive) ───
   {
@@ -1218,9 +1234,11 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     sectionEl.className = 'mb-8 animate-slide-up';
 
     const heading = document.createElement('h2');
-    heading.className = 'text-lg font-semibold mb-3 pb-2 border-b';
-    heading.style.color = 'var(--color-primary)';
-    heading.style.borderColor = 'var(--color-border)';
+    heading.style.cssText = `
+      font-family: var(--font-display); font-weight: 700; font-size: 0.7rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--color-ink-muted); margin-bottom: 0.875rem;
+    `;
     heading.textContent = 'Monotonie & Extremstellen';
     sectionEl.appendChild(heading);
 
@@ -1234,8 +1252,10 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     }
 
     const graphCard = document.createElement('div');
-    graphCard.className = 'card';
-    graphCard.style.padding = '0.5rem 0.5rem 0.75rem';
+    graphCard.style.cssText = `
+      background: var(--color-surface-inset); border-radius: 1rem;
+      padding: 0.75rem 0.5rem 0.75rem;
+    `;
 
     const rulesDiv = document.createElement('div');
     const nachweisDiv = document.createElement('div');
@@ -1258,9 +1278,11 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     sectionEl.style.animationDelay = '60ms';
 
     const heading = document.createElement('h2');
-    heading.className = 'text-lg font-semibold mb-3 pb-2 border-b';
-    heading.style.color = 'var(--color-primary)';
-    heading.style.borderColor = 'var(--color-border)';
+    heading.style.cssText = `
+      font-family: var(--font-display); font-weight: 700; font-size: 0.7rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--color-ink-muted); margin-bottom: 0.875rem;
+    `;
     heading.textContent = 'Wendestellen & Kr\u00fcmmung';
     sectionEl.appendChild(heading);
 
@@ -1273,8 +1295,10 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     }
 
     const graphCard = document.createElement('div');
-    graphCard.className = 'card';
-    graphCard.style.padding = '0.5rem 0.5rem 0.75rem';
+    graphCard.style.cssText = `
+      background: var(--color-surface-inset); border-radius: 1rem;
+      padding: 0.75rem 0.5rem 0.75rem;
+    `;
 
     const rulesDiv = document.createElement('div');
     const nachweisDiv = document.createElement('div');

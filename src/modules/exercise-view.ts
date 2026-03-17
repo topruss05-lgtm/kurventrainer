@@ -21,17 +21,18 @@ export function renderExerciseView(
 
   if (exercises.length === 0) {
     const msg = document.createElement('div');
-    msg.className = 'text-center py-12';
+    msg.style.cssText = 'text-align: center; padding: 3rem 0;';
 
     const text = document.createElement('p');
-    text.className = 'mb-4';
-    text.style.color = 'var(--color-ink-secondary)';
-    text.textContent = 'Noch keine Aufgaben für diese Kombination vorhanden.';
+    text.style.cssText = 'margin-bottom: 1rem; color: var(--color-ink-secondary); font-size: 0.9rem;';
+    text.textContent = 'Noch keine Aufgaben f\u00fcr diese Kombination vorhanden.';
 
     const backBtn = document.createElement('button');
-    backBtn.className = 'back-link';
-    backBtn.style.color = 'var(--color-primary)';
-    backBtn.textContent = '\u2190 Zurück zum Modul';
+    backBtn.style.cssText = `
+      background: none; border: none; cursor: pointer; padding: 0;
+      font-size: 0.8rem; color: var(--color-primary); transition: opacity 0.15s;
+    `;
+    backBtn.textContent = '\u2190 Zur\u00fcck zum Modul';
     backBtn.addEventListener('click', () => navigate({ page: 'module', moduleId }));
 
     msg.append(text, backBtn);
@@ -42,21 +43,63 @@ export function renderExerciseView(
   let currentIndex = 0;
   let destroyExercise: (() => void) | null = null;
 
+  // ─── Back button ───
   const backBtn = document.createElement('button');
-  backBtn.className = 'back-link mb-4';
-  backBtn.textContent = '\u2190 Zurück zum Modul';
+  backBtn.className = 'animate-fade-in';
+  backBtn.style.cssText = `
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-size: 0.8rem; color: var(--color-ink-muted); transition: color 0.15s;
+    margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.375rem;
+  `;
+  backBtn.textContent = '\u2190 Zur\u00fcck';
+  backBtn.addEventListener('mouseenter', () => { backBtn.style.color = 'var(--color-primary)'; });
+  backBtn.addEventListener('mouseleave', () => { backBtn.style.color = 'var(--color-ink-muted)'; });
   backBtn.addEventListener('click', () => navigate({ page: 'module', moduleId }));
 
-  const progress = document.createElement('p');
-  progress.className = 'text-sm mb-4';
-  progress.style.color = 'var(--color-ink-muted)';
+  // ─── Progress indicator ───
+  const progressWrap = document.createElement('div');
+  progressWrap.className = 'animate-fade-in';
+  progressWrap.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;';
 
+  const progressText = document.createElement('span');
+  progressText.style.cssText = `
+    font-family: var(--font-display); font-size: 0.75rem; font-weight: 600;
+    color: var(--color-ink-muted); white-space: nowrap;
+  `;
+
+  const progressTrack = document.createElement('div');
+  progressTrack.style.cssText = `
+    flex: 1; height: 3px; background: var(--color-surface-inset); border-radius: 2px; overflow: hidden;
+  `;
+  const progressFill = document.createElement('div');
+  progressFill.style.cssText = `
+    height: 100%; border-radius: 2px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  `;
+  progressTrack.appendChild(progressFill);
+  progressWrap.append(progressText, progressTrack);
+
+  // ─── Exercise card ───
   const exerciseContainer = document.createElement('div');
   exerciseContainer.className = 'card';
 
+  // ─── Next button ───
   const nextBtn = document.createElement('button');
-  nextBtn.className = 'btn-accent mt-4 w-full py-3 text-base hidden';
-  nextBtn.textContent = 'Nächste Aufgabe \u2192';
+  nextBtn.style.cssText = `
+    display: none; width: 100%; margin-top: 1rem; padding: 0.75rem;
+    background: var(--color-accent); color: #fff; border: none; border-radius: 0.5rem;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+  `;
+  nextBtn.textContent = 'N\u00e4chste Aufgabe \u2192';
+  nextBtn.addEventListener('mouseenter', () => {
+    nextBtn.style.backgroundColor = 'var(--color-accent-dark)';
+    nextBtn.style.boxShadow = '0 2px 8px rgba(224,122,58,0.25)';
+  });
+  nextBtn.addEventListener('mouseleave', () => {
+    nextBtn.style.backgroundColor = 'var(--color-accent)';
+    nextBtn.style.boxShadow = 'none';
+  });
   nextBtn.addEventListener('click', () => {
     currentIndex++;
     if (currentIndex >= exercises.length) {
@@ -65,7 +108,7 @@ export function renderExerciseView(
     renderCurrentExercise();
   });
 
-  container.append(backBtn, progress, exerciseContainer, nextBtn);
+  container.append(backBtn, progressWrap, exerciseContainer, nextBtn);
 
   function renderCurrentExercise(): void {
     destroyExercise?.();
@@ -73,8 +116,11 @@ export function renderExerciseView(
     while (exerciseContainer.firstChild) {
       exerciseContainer.removeChild(exerciseContainer.firstChild);
     }
-    nextBtn.classList.add('hidden');
-    progress.textContent = `Aufgabe ${currentIndex + 1} von ${exercises.length}`;
+    nextBtn.style.display = 'none';
+
+    // Update progress
+    progressText.textContent = `${currentIndex + 1} / ${exercises.length}`;
+    progressFill.style.width = `${((currentIndex + 1) / exercises.length) * 100}%`;
 
     // Subtle re-entry animation
     exerciseContainer.classList.remove('animate-scale-in');
@@ -83,7 +129,7 @@ export function renderExerciseView(
 
     const exercise = exercises[currentIndex];
     const onComplete = () => {
-      nextBtn.classList.remove('hidden');
+      nextBtn.style.display = 'block';
     };
 
     destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete);
