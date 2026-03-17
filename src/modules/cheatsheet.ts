@@ -1,11 +1,10 @@
 import { navigate } from '../router.js';
 import { createBoard, destroyBoard, type CanvasBoard } from '../graph/board-factory.js';
 import { COLORS } from '../graph/function-plotter.js';
-import { createFunctionCurve, createLine, createText, createPoint, createIntervalBand } from '../graph/canvas-renderer.js';
+import { createFunctionCurve, createLine, createPoint, createIntervalBand } from '../graph/canvas-renderer.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const BG = 'rgba(255,255,255,0.88)';
 
 // ── Unified color scheme per zone ────────────────────────────────────
 const ZONE_COLORS: Record<string, string> = {
@@ -119,7 +118,7 @@ function buildMonotonieExtremstellenSection(
   const segsF: Seg[] = segRanges.map(r => {
     const colored = createFunctionCurve(f, { color: COLOR_F, strokeWidth: 2.5, xRange: r.xRange });
     const gray = createFunctionCurve(f, { color: GRAY, strokeWidth: 2.5, xRange: r.xRange });
-    colored.visible = false; // default: gray
+    gray.visible = false;
     boardF.addElement(gray);
     boardF.addElement(colored);
     return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
@@ -130,7 +129,7 @@ function buildMonotonieExtremstellenSection(
     { colored: createPoint(0, 0, { color: HIGHLIGHT, size: 5, label: 'SP (0|0)' }), zone: 'sp' },
     { colored: createPoint(2, -1, { color: HIGHLIGHT, size: 5, label: 'TP (2|\u22121)' }), zone: 'tp' },
   ];
-  ptsF.forEach(p => { p.colored.visible = false; boardF.addElement(p.colored); }); // hidden by default
+  ptsF.forEach(p => { p.colored.visible = false; boardF.addElement(p.colored); });
   boardF.update();
 
   // Build f'-board elements
@@ -157,7 +156,7 @@ function buildMonotonieExtremstellenSection(
   const segsF1: Seg[] = segRangesF1.map(r => {
     const colored = createFunctionCurve(f1, { color: COLOR_F1, strokeWidth: 2, xRange: r.xRange });
     const gray = createFunctionCurve(f1, { color: GRAY, strokeWidth: 2, xRange: r.xRange });
-    colored.visible = false;
+    gray.visible = false;
     boardF1.addElement(gray);
     boardF1.addElement(colored);
     return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
@@ -533,8 +532,10 @@ function buildMonotonieExtremstellenSection(
       }
     }
 
-    // Detect what we're hovering over
-    const snappedZone = detectZone(mx, criticals, SNAP);
+    const isIntervalActive = activeClickZone === 'steigend' || activeClickZone === 'fallend';
+
+    // Detect what we're hovering over (skip point detection when interval is active)
+    const snappedZone = isIntervalActive ? 'none' : detectZone(mx, criticals, SNAP);
 
     if (snappedZone !== 'none') {
       if (snappedZone === 'sp') {
@@ -600,14 +601,17 @@ function buildMonotonieExtremstellenSection(
     setGraphState('blank');
   };
 
-  boardF.on('move', onMove);
-  boardF.canvas.addEventListener('mouseleave', onLeave);
-  boardF.canvas.addEventListener('touchend', onLeave);
-  cleanups.push(() => {
-    boardF.off('move', onMove);
-    boardF.canvas.removeEventListener('mouseleave', onLeave);
-    boardF.canvas.removeEventListener('touchend', onLeave);
-  });
+  // Disable hover on mobile — only rule card clicks
+  if (!window.matchMedia('(pointer: coarse)').matches) {
+    boardF.on('move', onMove);
+    boardF.canvas.addEventListener('mouseleave', onLeave);
+    boardF.canvas.addEventListener('touchend', onLeave);
+    cleanups.push(() => {
+      boardF.off('move', onMove);
+      boardF.canvas.removeEventListener('mouseleave', onLeave);
+      boardF.canvas.removeEventListener('touchend', onLeave);
+    });
+  }
   withCleanup(boardF, cleanups);
 
   return [boardF, boardF1];
@@ -679,7 +683,7 @@ function buildWendestellenSection(
   const segsF: WSeg[] = segRanges.map(r => {
     const colored = createFunctionCurve(f, { color: COLOR_F, strokeWidth: 2.5, xRange: r.xRange });
     const gray = createFunctionCurve(f, { color: GRAY, strokeWidth: 2.5, xRange: r.xRange });
-    colored.visible = false;
+    gray.visible = false;
     boardF.addElement(gray);
     boardF.addElement(colored);
     return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
@@ -689,8 +693,6 @@ function buildWendestellenSection(
     { colored: createPoint(1, 0, { color: HIGHLIGHT, size: 5, label: 'WP (1|0)' }), zone: 'wp' },
   ];
   ptsF.forEach(p => { p.colored.visible = false; boardF.addElement(p.colored); });
-  boardF.addElement(createText(-0.5, 3.0, '\u2322 Rechtskurve', { fontSize: 11, color: WZONE_COLORS.rechtskurve, background: BG }));
-  boardF.addElement(createText(2.2, -2.0, '\u2323 Linkskurve', { fontSize: 11, color: WZONE_COLORS.linkskurve, background: BG }));
   boardF.update();
 
   // ─ Board 2: f' (middle) ─
@@ -715,7 +717,7 @@ function buildWendestellenSection(
   const segsF1: WSeg[] = segRangesF1.map(r => {
     const colored = createFunctionCurve(f1, { color: COLOR_F1, strokeWidth: 2, xRange: r.xRange });
     const gray = createFunctionCurve(f1, { color: GRAY, strokeWidth: 2, xRange: r.xRange });
-    colored.visible = false;
+    gray.visible = false;
     boardF1.addElement(gray);
     boardF1.addElement(colored);
     return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
@@ -750,7 +752,7 @@ function buildWendestellenSection(
   const segsF2: WSeg[] = segRangesF2.map(r => {
     const colored = createFunctionCurve(f2, { color: COLOR_F2, strokeWidth: 2, xRange: r.xRange });
     const gray = createFunctionCurve(f2, { color: GRAY, strokeWidth: 2, xRange: r.xRange });
-    colored.visible = false;
+    gray.visible = false;
     boardF2.addElement(gray);
     boardF2.addElement(colored);
     return { colored, gray, zone: r.zone, xFrom: r.xRange[0], xTo: r.xRange[1] };
@@ -760,8 +762,6 @@ function buildWendestellenSection(
     { colored: createPoint(1, 0, { color: HIGHLIGHT, size: 5, label: "f'' = 0, VZW" }), zone: 'wp' },
   ];
   ptsF2.forEach(p => { p.colored.visible = false; boardF2.addElement(p.colored); });
-  boardF2.addElement(createText(-0.3, -5, "f'' < 0", { fontSize: 11, color: WZONE_COLORS.rechtskurve, background: BG }));
-  boardF2.addElement(createText(2.2, 6, "f'' > 0", { fontSize: 11, color: WZONE_COLORS.linkskurve, background: BG }));
   boardF2.update();
 
   // ─ Graph state control (3 boards) ─
@@ -778,6 +778,7 @@ function buildWendestellenSection(
       for (const s of allSegs) { s.colored.visible = true; s.gray.visible = false; }
       for (const b of allBands) b.el.visible = false;
       for (const p of allPts) p.colored.visible = false;
+
     } else if (mode === 'segment' && segIndex !== undefined) {
       const activeZone = segRanges[segIndex].zone;
       for (const s of allSegs) {
@@ -791,6 +792,7 @@ function buildWendestellenSection(
       for (const s of allSegs) { s.colored.visible = false; s.gray.visible = true; }
       for (const b of allBands) b.el.visible = false;
       for (const p of allPts) p.colored.visible = p.zone === zone;
+
     } else if (mode === 'zone' && zone) {
       for (const s of allSegs) {
         s.colored.visible = s.zone === zone;
@@ -925,14 +927,14 @@ function buildWendestellenSection(
   }
 
   rulesContainer.appendChild(makeWRuleCard(
-    'Linkskurve (konvex)',
-    ["f''(x) > 0 f\u00fcr alle x im Intervall"],
-    'linkskurve',
-  ));
-  rulesContainer.appendChild(makeWRuleCard(
     'Rechtskurve (konkav)',
     ["f''(x) < 0 f\u00fcr alle x im Intervall"],
     'rechtskurve',
+  ));
+  rulesContainer.appendChild(makeWRuleCard(
+    'Linkskurve (konvex)',
+    ["f''(x) > 0 f\u00fcr alle x im Intervall"],
+    'linkskurve',
   ));
   rulesContainer.appendChild(makeWRuleCard(
     'Wendepunkt (WP)',
@@ -1129,8 +1131,9 @@ function buildWendestellenSection(
       }
     }
 
-    // Detect zone
-    const isAtWP = Math.abs(mx - 1) < 0.01;
+    // Detect zone (skip point detection when interval is active)
+    const isIntervalActive = activeClickZone === 'rechtskurve' || activeClickZone === 'linkskurve';
+    const isAtWP = !isIntervalActive && Math.abs(mx - 1) < 0.01;
 
     if (isAtWP) {
       setGraphState('point', 'wp');
@@ -1167,14 +1170,17 @@ function buildWendestellenSection(
     setGraphState('blank');
   };
 
-  boardF.on('move', onMove);
-  boardF.canvas.addEventListener('mouseleave', onLeave);
-  boardF.canvas.addEventListener('touchend', onLeave);
-  cleanups.push(() => {
-    boardF.off('move', onMove);
-    boardF.canvas.removeEventListener('mouseleave', onLeave);
-    boardF.canvas.removeEventListener('touchend', onLeave);
-  });
+  // Disable hover on mobile — only rule card clicks
+  if (!window.matchMedia('(pointer: coarse)').matches) {
+    boardF.on('move', onMove);
+    boardF.canvas.addEventListener('mouseleave', onLeave);
+    boardF.canvas.addEventListener('touchend', onLeave);
+    cleanups.push(() => {
+      boardF.off('move', onMove);
+      boardF.canvas.removeEventListener('mouseleave', onLeave);
+      boardF.canvas.removeEventListener('touchend', onLeave);
+    });
+  }
   withCleanup(boardF, cleanups);
 
   return [boardF, boardF1, boardF2];
