@@ -44,6 +44,14 @@ export interface GraphAssignmentExercise extends BaseExercise {
 
 export type TargetType = 'maxima' | 'minima' | 'extrema' | 'wendestellen' | 'monoton-steigend' | 'monoton-fallend';
 
+export type MonotonicityType = 'smw' | 'smf';
+
+export interface MonotonicityInterval {
+  from: number | '-\u221e';
+  to: number | '+\u221e';
+  type: MonotonicityType;
+}
+
 export interface IdentifyPointsExercise extends BaseExercise {
   type: 'identify-points';
   targetType: TargetType;
@@ -54,6 +62,17 @@ export interface IdentifyPointsExercise extends BaseExercise {
   strictFollowUp?: {
     isStrict: boolean;
     explanation: string;
+  };
+  // Intervall-Klassifikation (für Monotonie)
+  intervalBounds?: number[];
+  includeInfinity?: boolean;
+  correctIntervals?: MonotonicityInterval[];
+  intervalCount?: number;
+  // K2: Extremstellen-Auswahl vor Intervall-Klassifikation
+  extremaOptions?: {
+    xValues: number[];          // Alle angebotenen x-Werte (inkl. Distraktoren)
+    correctIndices: number[];   // Indizes der korrekten Extremstellen in xValues
+    prompt?: string;
   };
 }
 

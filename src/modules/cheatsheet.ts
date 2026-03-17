@@ -8,46 +8,50 @@ import { createFunctionCurve, createLine, createPoint, createIntervalBand } from
 const S = {
   label: `
     font-family: var(--font-display); font-weight: 700; font-size: 0.8rem;
-    margin: 0.625rem 0 0.25rem 0.375rem;
-    color: var(--color-primary-dark);
+    margin: 0.75rem 0 0.375rem 0.5rem;
+    color: var(--color-primary-dark); letter-spacing: 0.01em;
   `,
   ruleCard: `
-    padding: 0.625rem 0.875rem; border-left: 3px solid rgba(13, 115, 119, 0.2);
-    transition: border-color 0.15s, background-color 0.15s, opacity 0.15s;
+    padding: 0.875rem 1rem; border-left: 3px solid rgba(13, 115, 119, 0.15);
+    border-radius: 0.75rem;
   `,
   ruleCardH3: `
-    font-family: var(--font-display); font-weight: 600;
-    transition: font-weight 0.15s;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.875rem;
+    color: var(--color-ink); line-height: 1.3;
   `,
   nachweisBox: `
-    background: var(--color-surface-card); border-radius: 1rem;
+    background: var(--color-surface-card); border-radius: 0.875rem;
     border: 1px solid var(--color-border);
     padding: 0; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(26,26,46,0.04);
   `,
   nachweisHeader: `
-    padding: 0.625rem 1rem; border-bottom: 1px solid var(--color-border);
+    padding: 0.75rem 1.125rem; border-bottom: 1px solid var(--color-border);
     display: flex; align-items: baseline; gap: 0.5rem;
+    background: var(--color-surface-inset);
   `,
   nachweisTitle: `font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem; color: var(--color-ink);`,
-  nachweisSub: `font-size: 0.7rem; color: var(--color-ink-muted);`,
+  nachweisSub: `font-size: 0.675rem; color: var(--color-ink-muted); letter-spacing: 0.02em;`,
   nachweisCell: `
-    background: var(--color-surface-card); padding: 0.625rem 0.375rem;
-    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
-    transition: background-color 0.15s;
+    background: var(--color-surface-card); padding: 0.875rem 0.625rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.375rem;
   `,
-  nachweisPremise: `font-size: 0.675rem; color: var(--color-ink-secondary); text-align: center; line-height: 1.45; white-space: pre-line;`,
-  nachweisDivider: `width: 1.5rem; height: 1px; background: var(--color-border);`,
-  nachweisConclusion: `font-family: var(--font-display); font-weight: 700; font-size: 0.75rem;`,
-  nachweisHint: `font-size: 0.6rem; color: var(--color-ink-muted); font-style: italic; margin-top: 0.125rem;`,
+  nachweisPremise: `font-size: 0.7rem; color: var(--color-ink-secondary); text-align: center; line-height: 1.5; white-space: pre-line;`,
+  nachweisDivider: `width: 2rem; height: 1px; background: var(--color-border);`,
+  nachweisConclusion: `font-family: var(--font-display); font-weight: 700; font-size: 0.8rem;`,
+  nachweisHint: `font-size: 0.625rem; color: var(--color-ink-muted); font-style: italic; margin-top: 0.25rem;`,
   graphCard: `
-    background: var(--color-primary-light); border-radius: 1rem;
-    padding: 0.75rem 0.5rem 0.75rem;
-    border: 1px solid rgba(13, 115, 119, 0.12);
+    background: var(--color-surface-card); border-radius: 1rem;
+    padding: 1rem 0.75rem 0.875rem;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
   `,
   sectionHeading: `
-    font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
-    color: var(--color-primary); margin-bottom: 1rem;
-    letter-spacing: -0.01em;
+    font-family: var(--font-display); font-weight: 700; font-size: 1rem;
+    color: #fff; letter-spacing: -0.01em;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    padding: 0.875rem 1.375rem; border-radius: 0.875rem; margin-bottom: 1.25rem;
+    box-shadow: 0 3px 12px rgba(13, 115, 119, 0.18), 0 1px 3px rgba(13, 115, 119, 0.08);
   `,
   backBtn: `
     background: none; border: none; cursor: pointer; padding: 0;
@@ -64,8 +68,7 @@ const S = {
     background: var(--color-primary-light); border-radius: 999px;
   `,
   divider: `
-    border: none; border-top: 1px solid rgba(13, 115, 119, 0.15);
-    margin: 2.5rem 0;
+    border: none; height: 0; margin: 3rem 0;
   `,
   idleBorder: 'rgba(13, 115, 119, 0.2)',
 } as const;
@@ -158,7 +161,7 @@ function highlightCards(cards: RuleCard[], zone: ZoneId): void {
     } else {
       rc.el.style.borderLeftColor = S.idleBorder;
       rc.el.style.backgroundColor = '';
-      rc.el.style.opacity = '0.3';
+      rc.el.style.opacity = '0.4';
       const h3 = rc.el.querySelector('h3') as HTMLElement;
       if (h3) h3.style.fontWeight = '600';
     }
@@ -177,7 +180,7 @@ function highlightCardsMulti(cards: RuleCard[], zones: ZoneId[]): void {
     } else {
       rc.el.style.borderLeftColor = S.idleBorder;
       rc.el.style.backgroundColor = '';
-      rc.el.style.opacity = '0.3';
+      rc.el.style.opacity = '0.4';
       const h3 = rc.el.querySelector('h3') as HTMLElement;
       if (h3) h3.style.fontWeight = '600';
     }
@@ -231,17 +234,17 @@ function buildNachweisBox(
   for (const c of conditions) {
     const isInert = c.zone === 'none';
     const cell = document.createElement('div');
-    cell.style.cssText = S.nachweisCell + (isInert ? ' opacity: 0.7; cursor: default;' : ' cursor: pointer;');
+    cell.style.cssText = S.nachweisCell + (isInert ? ' opacity: 0.5; cursor: default;' : ' cursor: pointer;');
 
     const premise = document.createElement('span');
-    premise.style.cssText = S.nachweisPremise + (isInert ? ' opacity: 0.8;' : '');
+    premise.style.cssText = S.nachweisPremise;
     premise.textContent = c.premise;
 
     const divider = document.createElement('span');
     divider.style.cssText = S.nachweisDivider;
 
     const conclusion = document.createElement('span');
-    conclusion.style.cssText = S.nachweisConclusion + ` color: ${isInert ? 'var(--color-ink-muted)' : 'var(--color-ink)'};`;
+    conclusion.style.cssText = S.nachweisConclusion + ' color: var(--color-ink);';
     conclusion.textContent = c.conclusion;
 
     cell.append(premise, divider, conclusion);
@@ -269,22 +272,20 @@ function buildNachweisBox(
 function highlightNachweisColumns(columns: HTMLElement[], zones: ZoneId[], zone: ZoneId): void {
   columns.forEach((col, i) => {
     const z = zones[i];
-    if (z === 'none') return;
     if (z === zone) {
       col.style.backgroundColor = HIGHLIGHT_BG;
       col.style.opacity = '1';
     } else {
       col.style.backgroundColor = 'var(--color-surface-card)';
-      col.style.opacity = '0.3';
+      col.style.opacity = '0.5';
     }
   });
 }
 
 function clearNachweisColumns(columns: HTMLElement[], zones: ZoneId[]): void {
   columns.forEach((col, i) => {
-    if (zones[i] === 'none') return;
     col.style.backgroundColor = 'var(--color-surface-card)';
-    col.style.opacity = '';
+    col.style.opacity = zones[i] === 'none' ? '0.5' : '';
   });
 }
 
@@ -995,7 +996,8 @@ function buildSectionLayout(
   ) => CanvasBoard[],
 ): CanvasBoard[] {
   const sectionEl = document.createElement('section');
-  sectionEl.className = 'mb-8 animate-slide-up';
+  sectionEl.className = 'animate-slide-up';
+  sectionEl.style.cssText = 'margin-bottom: 0;';
   if (animDelay) sectionEl.style.animationDelay = animDelay;
 
   const heading = document.createElement('h2');
@@ -1004,8 +1006,7 @@ function buildSectionLayout(
   sectionEl.appendChild(heading);
 
   const grid = document.createElement('div');
-  grid.className = 'grid gap-3';
-  grid.style.gridTemplateColumns = '1fr';
+  grid.style.cssText = 'display: grid; gap: 1rem; grid-template-columns: 1fr;';
   if (window.innerWidth >= 768) {
     grid.style.gridTemplateColumns = '1.4fr 1fr';
     grid.style.alignItems = 'start';
@@ -1015,8 +1016,9 @@ function buildSectionLayout(
   graphCard.style.cssText = S.graphCard;
 
   const rulesDiv = document.createElement('div');
+  rulesDiv.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem;';
   const nachweisDiv = document.createElement('div');
-  nachweisDiv.className = 'mt-3';
+  nachweisDiv.style.cssText = 'margin-top: 1.25rem;';
 
   const boards = buildFn(container, graphCard, rulesDiv, nachweisDiv);
 
