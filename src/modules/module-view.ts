@@ -1,7 +1,7 @@
 import { MODULE_CONFIGS } from '../config.js';
 import { navigate } from '../router.js';
-import { getAvailableExerciseTypes, getAvailableDifficulties } from '../data/exercise-loader.js';
-import type { ExerciseType, Difficulty } from '../types/exercise.js';
+import { getAvailableExerciseTypes, getAvailableCompetencyLevels } from '../data/exercise-loader.js';
+import type { ExerciseType, CompetencyLevel } from '../types/exercise.js';
 
 const TYPE_LABELS: Record<ExerciseType, string> = {
   'graph-assignment': 'Graph-Zuordnung',
@@ -9,6 +9,11 @@ const TYPE_LABELS: Record<ExerciseType, string> = {
   'true-false': 'Aussagen bewerten',
   'reverse-inference': 'R\u00fcckschluss-Trainer',
   'criteria-quiz': 'Kriterien-Quiz',
+  'step-by-step': 'Schritt f\u00fcr Schritt',
+  'context-interpretation': 'Sachkontext',
+  'graph-sketch': 'Graph-Skizze',
+  'contradiction-argument': 'Widerspruch finden',
+  'transformation-reasoning': 'Transformation',
 };
 
 const TYPE_DESCRIPTIONS: Record<ExerciseType, string> = {
@@ -17,26 +22,49 @@ const TYPE_DESCRIPTIONS: Record<ExerciseType, string> = {
   'true-false': 'Beurteile Aussagen und w\u00e4hle die richtige Begr\u00fcndung',
   'reverse-inference': 'Schlie\u00dfe vom Ableitungsgraph auf Eigenschaften',
   'criteria-quiz': 'Teste dein Wissen \u00fcber Bedingungen und Definitionen',
+  'step-by-step': 'Berechne Schritt f\u00fcr Schritt: Ableitung, Nullstellen, Nachweis',
+  'context-interpretation': 'Interpretiere mathematische Zusammenh\u00e4nge im Alltag',
+  'graph-sketch': 'Finde den passenden Graph zu gegebenen Bedingungen',
+  'contradiction-argument': 'Begr\u00fcnde, warum ein Graph nicht zur Funktion passt',
+  'transformation-reasoning': 'Schlie\u00dfe von f auf verschobene/gestreckte Funktionen',
 };
 
-const DIFFICULTY_LABELS: Record<Difficulty, string> = {
-  einfuehrung: 'Einf\u00fchrung',
-  uebung: '\u00dcbung',
-  herausforderung: 'Herausforderung',
+// Modul-spezifische Überschreibungen für Labels/Beschreibungen
+const MODULE_TYPE_OVERRIDES: Partial<Record<string, { label?: string; description?: string }>> = {
+  'monotonie:identify-points': {
+    label: 'Intervalle markieren',
+    description: 'Markiere Intervalle, in denen f steigt oder f\u00e4llt',
+  },
 };
 
-const DIFFICULTY_COLORS: Record<Difficulty, { bg: string; text: string; border: string }> = {
-  einfuehrung: { bg: 'var(--color-success-bg)', text: 'var(--color-success)', border: 'var(--color-success-border)' },
-  uebung: { bg: '#fef9ec', text: '#92710a', border: '#e5c44c' },
-  herausforderung: { bg: 'var(--color-error-bg)', text: 'var(--color-error)', border: 'var(--color-error-border)' },
+const COMPETENCY_LABELS: Record<CompetencyLevel, string> = {
+  K1: 'Am Graph ablesen',
+  K2: 'Berechnen',
+  K3: 'Zusammenh\u00e4nge',
+  K4: 'Textaufgaben',
+  K5: 'Beweisen',
 };
 
+const COMPETENCY_COLORS: Record<CompetencyLevel, { bg: string; text: string; border: string }> = {
+  K1: { bg: '#e8f5e9', text: '#2e7d32', border: '#66bb6a' },
+  K2: { bg: '#e3f2fd', text: '#1565c0', border: '#42a5f5' },
+  K3: { bg: '#fff8e1', text: '#f57f17', border: '#ffca28' },
+  K4: { bg: '#fce4ec', text: '#c62828', border: '#ef5350' },
+  K5: { bg: '#f3e5f5', text: '#6a1b9a', border: '#ab47bc' },
+};
+
+// Didaktische Reihenfolge: erkennen → rechnen → interpretieren → anwenden
 const TYPE_ORDER: Record<ExerciseType, number> = {
-  'graph-assignment': 1,
-  'identify-points': 2,
-  'true-false': 3,
+  'identify-points': 1,
+  'graph-assignment': 2,
+  'step-by-step': 3,
   'reverse-inference': 4,
-  'criteria-quiz': 5,
+  'true-false': 5,
+  'graph-sketch': 6,
+  'context-interpretation': 7,
+  'transformation-reasoning': 8,
+  'contradiction-argument': 9,
+  'criteria-quiz': 10,
 };
 
 export function renderModuleView(container: HTMLElement, moduleId: string): (() => void) | null {
@@ -102,7 +130,9 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
     typeList.appendChild(empty);
   }
 
-  availableTypes.forEach((exerciseType, index) => {
+  availableTypes
+    .sort((a, b) => (TYPE_ORDER[a] ?? 99) - (TYPE_ORDER[b] ?? 99))
+    .forEach((exerciseType, index) => {
     const section = document.createElement('div');
     section.className = 'card animate-slide-up';
     section.style.cssText = `
@@ -120,14 +150,16 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
       background: var(--color-surface-inset); color: var(--color-ink-muted);
       font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
     `;
-    icon.textContent = `${TYPE_ORDER[exerciseType]}`;
+    icon.textContent = `${TYPE_ORDER[exerciseType] ?? '?'}`;
 
     const typeTitle = document.createElement('h2');
     typeTitle.style.cssText = `
       font-family: var(--font-display); font-weight: 600; font-size: 0.9rem;
       color: var(--color-ink);
     `;
-    typeTitle.textContent = TYPE_LABELS[exerciseType];
+    const overrideKey = `${config.id}:${exerciseType}`;
+    const override = MODULE_TYPE_OVERRIDES[overrideKey];
+    typeTitle.textContent = override?.label ?? TYPE_LABELS[exerciseType] ?? exerciseType;
 
     headerRow.append(icon, typeTitle);
 
@@ -136,16 +168,16 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
       font-size: 0.775rem; color: var(--color-ink-muted); margin-bottom: 0.875rem;
       padding-left: 2.75rem;
     `;
-    typeDesc.textContent = TYPE_DESCRIPTIONS[exerciseType];
+    typeDesc.textContent = override?.description ?? TYPE_DESCRIPTIONS[exerciseType] ?? '';
 
-    // Difficulty buttons
-    const diffGrid = document.createElement('div');
-    diffGrid.style.cssText = 'display: flex; gap: 0.5rem; flex-wrap: wrap; padding-left: 2.75rem;';
+    // Competency level buttons
+    const compGrid = document.createElement('div');
+    compGrid.style.cssText = 'display: flex; gap: 0.5rem; flex-wrap: wrap; padding-left: 2.75rem;';
 
-    const availableDiffs = getAvailableDifficulties(config.id, exerciseType);
+    const availableLevels: CompetencyLevel[] = getAvailableCompetencyLevels(config.id, exerciseType);
 
-    for (const diff of availableDiffs) {
-      const colors = DIFFICULTY_COLORS[diff];
+    for (const level of availableLevels) {
+      const colors = COMPETENCY_COLORS[level];
       const btn = document.createElement('button');
       btn.style.cssText = `
         padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.8rem;
@@ -153,7 +185,7 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
         min-height: 2.5rem; border: 1px solid ${colors.border};
         background: ${colors.bg}; color: ${colors.text};
       `;
-      btn.textContent = DIFFICULTY_LABELS[diff];
+      btn.textContent = COMPETENCY_LABELS[level];
       btn.addEventListener('mouseenter', () => {
         btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
         btn.style.transform = 'translateY(-1px)';
@@ -163,12 +195,12 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
         btn.style.transform = 'none';
       });
       btn.addEventListener('click', () =>
-        navigate({ page: 'exercise', moduleId: config.id, type: exerciseType, difficulty: diff })
+        navigate({ page: 'exercise', moduleId: config.id, type: exerciseType, difficulty: level })
       );
-      diffGrid.appendChild(btn);
+      compGrid.appendChild(btn);
     }
 
-    section.append(headerRow, typeDesc, diffGrid);
+    section.append(headerRow, typeDesc, compGrid);
     typeList.appendChild(section);
   });
 

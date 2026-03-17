@@ -5,18 +5,23 @@ import { renderIdentifyPoints } from '../exercises/identify-points.js';
 import { renderTrueFalse } from '../exercises/true-false.js';
 import { renderGraphAssignment } from '../exercises/graph-assignment.js';
 import { renderReverseInference } from '../exercises/reverse-inference.js';
-import type { Exercise, ModuleId, ExerciseType, Difficulty } from '../types/exercise.js';
+import { renderStepByStep } from '../exercises/step-by-step.js';
+import { renderContextInterpretation } from '../exercises/context-interpretation.js';
+import { renderGraphSketch } from '../exercises/graph-sketch.js';
+import { renderContradictionArgument } from '../exercises/contradiction-argument.js';
+import { renderTransformationReasoning } from '../exercises/transformation-reasoning.js';
+import type { Exercise, ModuleId, ExerciseType, CompetencyLevel } from '../types/exercise.js';
 
 export function renderExerciseView(
   container: HTMLElement,
   moduleId: string,
   type: string,
-  difficulty: string,
+  competency: string,
 ): (() => void) | null {
   const exercises = getExercises(
     moduleId as ModuleId,
     type as ExerciseType,
-    difficulty as Difficulty,
+    competency as CompetencyLevel,
   );
 
   if (exercises.length === 0) {
@@ -158,6 +163,16 @@ function renderExerciseByType(
       return renderGraphAssignment(container, exercise, onComplete);
     case 'reverse-inference':
       return renderReverseInference(container, exercise, onComplete);
+    case 'step-by-step':
+      return renderStepByStep(container, exercise, onComplete);
+    case 'context-interpretation':
+      return renderContextInterpretation(container, exercise, onComplete);
+    case 'graph-sketch':
+      return renderGraphSketch(container, exercise, onComplete);
+    case 'contradiction-argument':
+      return renderContradictionArgument(container, exercise, onComplete);
+    case 'transformation-reasoning':
+      return renderTransformationReasoning(container, exercise, onComplete);
     default:
       return null;
   }

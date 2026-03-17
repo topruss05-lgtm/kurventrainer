@@ -24,6 +24,8 @@ function createEmpty(): AppProgress {
       extremstellen: { completed: 0, total: 0, correct: 0 },
       wendestellen: { completed: 0, total: 0, correct: 0 },
       zusammenhang: { completed: 0, total: 0, correct: 0 },
+      kurvendiskussion: { completed: 0, total: 0, correct: 0 },
+      sachkontext: { completed: 0, total: 0, correct: 0 },
       quiz: { completed: 0, total: 0, correct: 0 },
     },
     results: [],

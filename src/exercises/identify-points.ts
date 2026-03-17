@@ -168,11 +168,11 @@ function renderIntervalExercise(
 
     const [selFrom, selTo] = selector.getInterval();
 
-    // Check if selected interval is within any correct interval
-    const correct = intervals.some(iv => {
-      const tolerance = 0.5;
-      return selFrom >= iv.from - tolerance && selTo <= iv.to + tolerance && (selTo - selFrom) >= 0.5;
-    });
+    // Check if selected interval matches the correct interval exactly (largest possible)
+    const tolerance = 0.6;
+    const correct = intervals.some(iv =>
+      Math.abs(selFrom - iv.from) <= tolerance && Math.abs(selTo - iv.to) <= tolerance,
+    );
 
     recordResult(exercise.module, exercise.id, correct);
 
@@ -187,6 +187,70 @@ function renderIntervalExercise(
     }
 
     submitBtn.classList.add('hidden');
+
+    // Follow-up: streng monoton?
+    if (correct && exercise.strictFollowUp) {
+      const followUp = exercise.strictFollowUp;
+      const followUpDiv = document.createElement('div');
+      followUpDiv.className = 'animate-fade-in mt-4';
+
+      const question = document.createElement('p');
+      question.style.cssText = 'font-weight: 600; margin-bottom: 0.75rem;';
+      const art = exercise.targetType === 'monoton-steigend' ? 'steigend' : 'fallend';
+      question.textContent = `Ist f in diesem Intervall auch streng monoton ${art}?`;
+      followUpDiv.appendChild(question);
+
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display: flex; gap: 0.5rem;';
+
+      for (const answer of ['Ja', 'Nein']) {
+        const btn = document.createElement('button');
+        btn.style.cssText = `
+          flex: 1; padding: 0.75rem; border-radius: 0.75rem; font-weight: 500;
+          font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+          min-height: 44px; border: 1px solid var(--color-border);
+          background: var(--color-surface); color: var(--color-ink);
+        `;
+        btn.textContent = answer;
+
+        btn.addEventListener('click', () => {
+          if (btn.dataset.locked === 'true') return;
+          const allBtns = btnRow.querySelectorAll('button');
+          allBtns.forEach(b => { (b as HTMLElement).dataset.locked = 'true'; (b as HTMLElement).style.cursor = 'default'; });
+
+          const userSaysYes = answer === 'Ja';
+          const isCorrect = userSaysYes === followUp.isStrict;
+
+          btn.style.borderColor = isCorrect ? 'var(--color-success)' : 'var(--color-error)';
+          btn.style.backgroundColor = isCorrect ? 'var(--color-success-bg)' : 'var(--color-error-bg)';
+
+          if (!isCorrect) {
+            const correctBtn = allBtns[followUp.isStrict ? 0 : 1] as HTMLElement;
+            correctBtn.style.borderColor = 'var(--color-success)';
+            correctBtn.style.backgroundColor = 'var(--color-success-bg)';
+          }
+
+          const fb = document.createElement('div');
+          fb.className = 'animate-fade-in mt-2';
+          fb.style.cssText = `
+            padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.85rem; line-height: 1.5;
+            background: ${isCorrect ? 'var(--color-success-bg)' : 'var(--color-error-bg)'};
+            color: ${isCorrect ? 'var(--color-success)' : 'var(--color-error)'};
+            border: 1px solid ${isCorrect ? 'var(--color-success-border)' : 'var(--color-error-border)'};
+          `;
+          fb.textContent = (isCorrect ? 'Richtig! ' : 'Falsch. ') + followUp.explanation;
+          followUpDiv.appendChild(fb);
+          onComplete();
+        });
+
+        btnRow.appendChild(btn);
+      }
+
+      followUpDiv.appendChild(btnRow);
+      container.appendChild(followUpDiv);
+      return; // don't call onComplete yet — wait for follow-up answer
+    }
+
     onComplete();
   });
 

@@ -6,7 +6,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-mono-01',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'einfuehrung',
+    competency: 'K1',
     question: 'Wann ist eine Funktion f in einem Intervall streng monoton wachsend?',
     options: [
       'Wenn f\'(x) > 0 für alle x im Intervall',
@@ -21,7 +21,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-mono-02',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'einfuehrung',
+    competency: 'K1',
     question: 'Was bedeutet f\'(x) < 0 für alle x in einem Intervall?',
     options: [
       'f ist streng monoton fallend in diesem Intervall',
@@ -37,7 +37,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-ext-01',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'einfuehrung',
+    competency: 'K1',
     question: 'Was ist die notwendige Bedingung für eine lokale Extremstelle bei x₀?',
     options: [
       'f\'(x₀) = 0',
@@ -52,7 +52,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-ext-02',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'einfuehrung',
+    competency: 'K1',
     question: 'f\'(x₀) = 0 und f\'\'(x₀) < 0. Was hat f bei x₀?',
     options: [
       'Ein lokales Maximum (Hochpunkt)',
@@ -72,7 +72,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-ext-03',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'uebung',
+    competency: 'K3',
     question: 'f\'(x₀) = 0 und f\'\'(x₀) > 0. Was hat f bei x₀?',
     options: [
       'Ein lokales Minimum (Tiefpunkt)',
@@ -92,7 +92,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-ext-04',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'uebung',
+    competency: 'K3',
     question: 'f\'(x₀) = 0, aber f\' wechselt bei x₀ das Vorzeichen nicht. Was liegt vor?',
     options: [
       'Ein Sattelpunkt — die Tangente ist waagerecht, aber es ist kein Extremum',
@@ -107,7 +107,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-ext-05',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'uebung',
+    competency: 'K3',
     question: 'Was bedeutet ein Vorzeichenwechsel von f\' von + nach − bei x₀?',
     options: [
       'f hat bei x₀ ein lokales Maximum',
@@ -122,7 +122,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-ext-06',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'herausforderung',
+    competency: 'K5',
     question: 'Wann hat f bei x₀ einen Sattelpunkt?',
     options: [
       'f\'(x₀) = 0, aber f\' hat bei x₀ keinen Vorzeichenwechsel',
@@ -143,7 +143,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-wend-01',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'einfuehrung',
+    competency: 'K1',
     question: 'Was ist die notwendige Bedingung für eine Wendestelle bei x₀?',
     options: [
       'f\'\'(x₀) = 0',
@@ -158,7 +158,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-wend-06',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'einfuehrung',
+    competency: 'K1',
     question: 'Woran erkennst du eine Wendestelle am Graphen?',
     options: [
       'Die Kurve wechselt von Links- zu Rechtskurve (oder umgekehrt)',
@@ -173,7 +173,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-wend-02',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'einfuehrung',
+    competency: 'K1',
     question: 'Was ist die hinreichende Bedingung für eine Wendestelle bei x₀?',
     options: [
       'f\'\'(x₀) = 0 und f\'\'\'(x₀) ≠ 0',
@@ -188,7 +188,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-wend-03',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'uebung',
+    competency: 'K3',
     question: 'f\'\' wechselt bei x₀ das Vorzeichen von positiv nach negativ. Was bedeutet das für f?',
     options: [
       'f hat bei x₀ eine Wendestelle — die Krümmung wechselt von Links- zu Rechtskurve',
@@ -203,7 +203,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-wend-04',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'uebung',
+    competency: 'K3',
     question: 'f\'\'(x) > 0 in einem Intervall. Wie ist der Graph von f dort gekrümmt?',
     options: [
       'Linksgekrümmt (konvex, nach oben offen)',
@@ -219,7 +219,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-zus-01',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'uebung',
+    competency: 'K3',
     question: 'Wo der Graph von f\' die x-Achse schneidet (mit VZW), hat f...',
     options: [
       'eine lokale Extremstelle',
@@ -234,7 +234,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-zus-02',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'uebung',
+    competency: 'K3',
     question: 'Wo f\' ein lokales Extremum hat, hat f...',
     options: [
       'eine Wendestelle',
@@ -249,7 +249,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-zus-03',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'herausforderung',
+    competency: 'K5',
     question: 'Der Graph von f\' liegt in einem Intervall vollständig oberhalb der x-Achse. Was gilt für f?',
     options: [
       'f ist in diesem Intervall streng monoton wachsend',
@@ -265,7 +265,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-zus-04',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'herausforderung',
+    competency: 'K5',
     question: 'Bei f(x) = x⁴ gilt f\'\'(0) = 0. Trotzdem hat f bei x = 0 keine Wendestelle. Warum?',
     options: [
       'f\'\' hat bei x = 0 keinen Vorzeichenwechsel — f\'\' ist beidseitig positiv',
@@ -285,7 +285,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-ext-07',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'herausforderung',
+    competency: 'K5',
     question: 'Bei f(x) = x⁴ − 4x³ gilt f\'(0) = 0. Hat f bei x = 0 ein Extremum?',
     options: [
       'Nein — f\' berührt die x-Achse bei x = 0 nur, ohne Vorzeichenwechsel → Sattelpunkt',
@@ -305,7 +305,7 @@ export const quizExercises: CriteriaQuizExercise[] = [
     id: 'quiz-wend-05',
     type: 'criteria-quiz',
     module: 'quiz',
-    difficulty: 'herausforderung',
+    competency: 'K5',
     question: 'Kann eine Wendestelle gleichzeitig ein Sattelpunkt sein?',
     options: [
       'Ja — z.\u202FB. bei f(x) = x³: f\'(0) = 0 und f\'\'(0) = 0 mit VZW von f\'\'',

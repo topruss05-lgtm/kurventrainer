@@ -1,4 +1,4 @@
-import type { ModuleId, ExerciseType, Difficulty } from './exercise.js';
+import type { ModuleId, ExerciseType, CompetencyLevel } from './exercise.js';
 
 export interface ModuleProgress {
   completed: number;
@@ -33,5 +33,5 @@ export interface ModuleConfig {
   description: string;
   order: number;
   exerciseTypes: ExerciseType[];
-  difficulties: Difficulty[];
+  competencyLevels: CompetencyLevel[];
 }

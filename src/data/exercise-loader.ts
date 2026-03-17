@@ -1,9 +1,17 @@
-import type { Exercise, ModuleId, ExerciseType, Difficulty } from '../types/exercise.js';
+import type { Exercise, ModuleId, ExerciseType, CompetencyLevel } from '../types/exercise.js';
 import { monotoneExercises } from './exercises-monotonie.js';
 import { extremstellenExercises } from './exercises-extremstellen.js';
 import { wendestellenExercises } from './exercises-wendestellen.js';
 import { zusammenhangExercises } from './exercises-zusammenhang.js';
 import { quizExercises } from './exercises-quiz.js';
+import { stepExtremstellenExercises } from './exercises-step-extremstellen.js';
+import { stepWendestellenExercises } from './exercises-step-wendestellen.js';
+import { sachkontextExercises } from './exercises-sachkontext.js';
+import { kurvendiskussionExercises } from './exercises-kurvendiskussion.js';
+import { graphSketchExercises } from './exercises-graph-sketch.js';
+import { contradictionExercises } from './exercises-contradiction.js';
+import { transformationExercises } from './exercises-transformation.js';
+import { remainingExercises } from './exercises-remaining.js';
 
 const ALL_EXERCISES: Exercise[] = [
   ...monotoneExercises,
@@ -11,17 +19,24 @@ const ALL_EXERCISES: Exercise[] = [
   ...wendestellenExercises,
   ...zusammenhangExercises,
   ...quizExercises,
+  ...stepExtremstellenExercises,
+  ...stepWendestellenExercises,
+  ...sachkontextExercises,
+  ...kurvendiskussionExercises,
+  ...graphSketchExercises,
+  ...contradictionExercises,
+  ...transformationExercises,
+  ...remainingExercises,
 ];
 
 export function getExercises(
   moduleId: ModuleId,
   type: ExerciseType,
-  difficulty: Difficulty,
+  competency: CompetencyLevel,
 ): Exercise[] {
   const exact = ALL_EXERCISES.filter(
-    e => e.module === moduleId && e.type === type && e.difficulty === difficulty,
+    e => e.module === moduleId && e.type === type && e.competency === competency,
   );
-  // Fallback: if no exercises for this exact difficulty, return all of this type in this module
   if (exact.length === 0) {
     return ALL_EXERCISES.filter(
       e => e.module === moduleId && e.type === type,
@@ -40,15 +55,15 @@ export function getAvailableExerciseTypes(moduleId: ModuleId): ExerciseType[] {
   return [...types];
 }
 
-export function getAvailableDifficulties(moduleId: ModuleId, type: ExerciseType): Difficulty[] {
-  const diffs = new Set<Difficulty>();
+export function getAvailableCompetencyLevels(moduleId: ModuleId, type: ExerciseType): CompetencyLevel[] {
+  const levels = new Set<CompetencyLevel>();
   for (const e of ALL_EXERCISES) {
     if (e.module === moduleId && e.type === type) {
-      diffs.add(e.difficulty);
+      levels.add(e.competency);
     }
   }
-  const ORDER: Difficulty[] = ['einfuehrung', 'uebung', 'herausforderung'];
-  return ORDER.filter(d => diffs.has(d));
+  const ORDER: CompetencyLevel[] = ['K1', 'K2', 'K3', 'K4', 'K5'];
+  return ORDER.filter(l => levels.has(l));
 }
 
 export function getExerciseById(id: string): Exercise | undefined {
