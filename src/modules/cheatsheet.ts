@@ -80,9 +80,10 @@ function buildMonotonieExtremstellenSection(
   const COLOR_F1 = '#1a6b6b'; // Dunkelcyan
   addLabel(graphContainer, 'Graph von f  \u2014  Bewege die Maus oder klicke rechts auf eine Regel', COLOR_F);
   const boardF = createBoard(graphContainer, {
-    boundingBox: [-3.5, 1.8, 3.5, -1.8],
+    boundingBox: [-3.5, 2.5, 3.5, -2.5],
     keepAspectRatio: true,
     height: 250,
+    targetTicks: 6,
   });
   // ─ Segments, bands, points — each with index for per-segment control ─
   const GRAY = '#c0bdb8';
@@ -137,6 +138,7 @@ function buildMonotonieExtremstellenSection(
   const boardF1 = createBoard(graphContainer, {
     boundingBox: [-3.5, 5, 3.5, -2.5],
     height: 150,
+    targetTicks: 5,
   });
 
   const segRangesF1: Array<{ xRange: [number, number]; zone: Zone }> = [
@@ -163,9 +165,9 @@ function buildMonotonieExtremstellenSection(
   });
 
   const ptsF1: Pt[] = [
-    { colored: createPoint(-2, 0, { color: HIGHLIGHT, size: 5, label: "f' = 0, VZW + \u2192 \u2212" }), zone: 'hp' },
-    { colored: createPoint(0, 0, { color: HIGHLIGHT, size: 5, label: "f' = 0, kein VZW" }), zone: 'sp' },
-    { colored: createPoint(2, 0, { color: HIGHLIGHT, size: 5, label: "f' = 0, VZW \u2212 \u2192 +" }), zone: 'tp' },
+    { colored: createPoint(-2, 0, { color: HIGHLIGHT, size: 5, label: "f'\u2009=\u20090, VZW +\u2192\u2212" }), zone: 'hp' },
+    { colored: createPoint(0, 0, { color: HIGHLIGHT, size: 5, label: "f'\u2009=\u20090, kein VZW" }), zone: 'sp' },
+    { colored: createPoint(2, 0, { color: HIGHLIGHT, size: 5, label: "f'\u2009=\u20090, VZW \u2212\u2192+", labelOffset: [-10, -12] }), zone: 'tp' },
   ];
   ptsF1.forEach(p => { p.colored.visible = false; boardF1.addElement(p.colored); });
   boardF1.update();
@@ -653,8 +655,9 @@ function buildWendestellenSection(
   const COLOR_F2 = '#7c5cbf';
   addLabel(graphContainer, 'Graph von f  \u2014  Bewege die Maus oder klicke rechts', COLOR_F);
   const boardF = createBoard(graphContainer, {
-    boundingBox: [-1.5, 5.5, 3.5, -4.5],
+    boundingBox: [-1.8, 7, 3.8, -5.5],
     height: 220,
+    targetTicks: 6,
   });
   const GRAY = '#c0bdb8';
   type BE = import('../graph/canvas-board.js').BoardElement;
@@ -664,12 +667,12 @@ function buildWendestellenSection(
   interface WPt { colored: BE; zone: WZone }
 
   const segRanges: Array<{ xRange: [number, number]; zone: WZone }> = [
-    { xRange: [-1.2, 1], zone: 'rechtskurve' },
-    { xRange: [1, 3.2], zone: 'linkskurve' },
-  ];
-  const bandRanges: Array<{ xRange: [number, number]; zone: WZone }> = [
     { xRange: [-1.5, 1], zone: 'rechtskurve' },
     { xRange: [1, 3.5], zone: 'linkskurve' },
+  ];
+  const bandRanges: Array<{ xRange: [number, number]; zone: WZone }> = [
+    { xRange: [-1.8, 1], zone: 'rechtskurve' },
+    { xRange: [1, 3.8], zone: 'linkskurve' },
   ];
 
   // Build f-board elements
@@ -698,13 +701,14 @@ function buildWendestellenSection(
   // ─ Board 2: f' (middle) ─
   addLabel(graphContainer, "Graph von f'", COLOR_F1);
   const boardF1 = createBoard(graphContainer, {
-    boundingBox: [-1.5, 5, 3.5, -4],
-    height: 110,
+    boundingBox: [-1.8, 14, 3.8, -5],
+    height: 130,
+    targetTicks: 4,
   });
 
   const segRangesF1: Array<{ xRange: [number, number]; zone: WZone }> = [
-    { xRange: [-1.2, 1], zone: 'rechtskurve' },
-    { xRange: [1, 3.2], zone: 'linkskurve' },
+    { xRange: [-1.5, 1], zone: 'rechtskurve' },
+    { xRange: [1, 3.5], zone: 'linkskurve' },
   ];
 
   const bandsF1: WBand[] = bandRanges.map(r => {
@@ -733,13 +737,14 @@ function buildWendestellenSection(
   // ─ Board 3: f'' (bottom) ─
   addLabel(graphContainer, "Graph von f''", COLOR_F2);
   const boardF2 = createBoard(graphContainer, {
-    boundingBox: [-1.5, 12, 3.5, -10],
-    height: 110,
+    boundingBox: [-1.8, 16, 3.8, -16],
+    height: 120,
+    targetTicks: 4,
   });
 
   const segRangesF2: Array<{ xRange: [number, number]; zone: WZone }> = [
-    { xRange: [-1.2, 1], zone: 'rechtskurve' },
-    { xRange: [1, 3.2], zone: 'linkskurve' },
+    { xRange: [-1.5, 1], zone: 'rechtskurve' },
+    { xRange: [1, 3.5], zone: 'linkskurve' },
   ];
 
   const bandsF2: WBand[] = bandRanges.map(r => {
@@ -928,17 +933,17 @@ function buildWendestellenSection(
 
   rulesContainer.appendChild(makeWRuleCard(
     'Rechtskurve (konkav)',
-    ["f''(x) < 0 f\u00fcr alle x im Intervall"],
+    ["f' f\u00e4llt \u2192 Steigung nimmt ab", "f''(x) < 0 f\u00fcr alle x im Intervall"],
     'rechtskurve',
   ));
   rulesContainer.appendChild(makeWRuleCard(
     'Linkskurve (konvex)',
-    ["f''(x) > 0 f\u00fcr alle x im Intervall"],
+    ["f' steigt \u2192 Steigung nimmt zu", "f''(x) > 0 f\u00fcr alle x im Intervall"],
     'linkskurve',
   ));
   rulesContainer.appendChild(makeWRuleCard(
     'Wendepunkt (WP)',
-    ["f''(x\u2080) = 0 und VZW von f''"],
+    ["f' hat Extremstelle bei x\u2080", "f''(x\u2080) = 0 und VZW von f''"],
     'wp',
   ));
 
@@ -1012,58 +1017,54 @@ function buildWendestellenSection(
     ];
 
     for (const c of conditions) {
+      const isInert = c.zone === 'none';
       const cell = document.createElement('div');
       cell.style.cssText = `
-        background: var(--color-surface-card); padding: 0.625rem 0.375rem; cursor: pointer;
+        background: var(--color-surface-card); padding: 0.625rem 0.375rem;
         display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
         transition: background-color 0.15s;
+        ${isInert ? 'opacity: 0.7; cursor: default;' : 'cursor: pointer;'}
       `;
 
       const premise = document.createElement('span');
-      premise.style.cssText = 'font-size: 0.675rem; color: var(--color-ink-secondary); text-align: center; line-height: 1.45; white-space: pre-line;';
+      premise.style.cssText = `font-size: 0.675rem; color: var(--color-ink-secondary); text-align: center; line-height: 1.45; white-space: pre-line;${isInert ? ' opacity: 0.8;' : ''}`;
       premise.textContent = c.premise;
 
       const divider = document.createElement('span');
       divider.style.cssText = 'width: 1.5rem; height: 1px; background: var(--color-border);';
 
       const conclusion = document.createElement('span');
-      conclusion.style.cssText = `font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; color: var(--color-ink);`;
+      conclusion.style.cssText = `font-family: var(--font-display); font-weight: 700; font-size: 0.75rem; color: ${isInert ? 'var(--color-ink-muted)' : 'var(--color-ink)'};`;
       conclusion.textContent = c.conclusion;
 
       cell.append(premise, divider, conclusion);
+
+      if (isInert) {
+        const hint = document.createElement('span');
+        hint.style.cssText = 'font-size: 0.6rem; color: var(--color-ink-muted); font-style: italic; margin-top: 0.125rem;';
+        hint.textContent = "\u2192 VZW von f'' pr\u00fcfen";
+        cell.appendChild(hint);
+      }
+
       qtBody.appendChild(cell);
       wNachweisColumns.push(cell);
 
-      cell.addEventListener('click', () => {
-        if (c.zone === 'none') {
-          if (activeClickZone === null) { clearAll(); return; }
-          activeClickZone = null;
-          hideGraphics();
-          for (const s of allSegs) { s.colored.visible = false; s.gray.visible = true; }
-          for (const b of allBands) b.el.visible = false;
-          for (const p of allPts) p.colored.visible = false;
-          updateAllBoards();
-          for (const rc of wRuleCards) {
-            rc.el.style.borderLeftColor = 'transparent';
-            rc.el.style.backgroundColor = '';
-            rc.el.style.opacity = '0.3';
+      if (!isInert) {
+        cell.addEventListener('click', () => {
+          if (activeClickZone === (c.zone as WZone)) {
+            clearAll();
+          } else {
+            activeClickZone = c.zone as WZone;
+            highlightZone(c.zone as WZone);
+            setGraphState('point', c.zone as WZone);
+            showAtX(wZoneX[c.zone as WZone]);
+            f1TangentLine.visible = false;
+            f1Dot.visible = false;
+            f2Dot.visible = false;
+            updateAllBoards();
           }
-          highlightWNachweis('none');
-          return;
-        }
-        if (activeClickZone === (c.zone as WZone)) {
-          clearAll();
-        } else {
-          activeClickZone = c.zone as WZone;
-          highlightZone(c.zone as WZone);
-          setGraphState('point', c.zone as WZone);
-          showAtX(wZoneX[c.zone as WZone]);
-          f1TangentLine.visible = false;
-          f1Dot.visible = false;
-          f2Dot.visible = false;
-          updateAllBoards();
-        }
-      });
+        });
+      }
     }
 
     qt.append(qtHeader, qtBody);
@@ -1073,6 +1074,7 @@ function buildWendestellenSection(
   function highlightWNachweis(zone: WZone | 'none'): void {
     wNachweisColumns.forEach((col, i) => {
       const z = wNachweisZones[i];
+      if (z === 'none') return; // inert cell — never change its style
       if (z === zone) {
         col.style.backgroundColor = HIGHLIGHT_BG;
         col.style.opacity = '1';
@@ -1084,7 +1086,8 @@ function buildWendestellenSection(
   }
 
   function clearWNachweisHighlight(): void {
-    wNachweisColumns.forEach(col => {
+    wNachweisColumns.forEach((col, i) => {
+      if (wNachweisZones[i] === 'none') return; // inert cell
       col.style.backgroundColor = 'var(--color-surface-card)';
       col.style.opacity = '';
     });

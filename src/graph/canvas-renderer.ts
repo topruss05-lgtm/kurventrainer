@@ -92,11 +92,21 @@ export function createPoint(
       ctx.stroke();
 
       if (el.label) {
-        ctx.fillStyle = options.color;
         ctx.font = `500 12px ${FONT}`;
-        ctx.textAlign = 'left';
+        const isLeft = offset[0] < 0;
+        ctx.textAlign = isLeft ? 'right' : 'left';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(el.label, sx + offset[0], sy + offset[1]);
+        const metrics = ctx.measureText(el.label);
+        const pad = 3;
+        const tx = sx + offset[0];
+        const ly = sy + offset[1] - metrics.actualBoundingBoxAscent - pad;
+        const lw = metrics.width + pad * 2;
+        const lh = metrics.actualBoundingBoxAscent + pad * 2;
+        const lx = isLeft ? tx - metrics.width - pad : tx - pad;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.fillRect(lx, ly, lw, lh);
+        ctx.fillStyle = options.color;
+        ctx.fillText(el.label, tx, sy + offset[1]);
       }
     },
   };

@@ -4,6 +4,7 @@ export interface BoardOptions {
   axis?: boolean;
   height?: number; // CSS px, default 350
   keepAspectRatio?: boolean; // if true, adjust bbox so 1 unit x = 1 unit y
+  targetTicks?: number; // target number of ticks per axis, default 8
 }
 
 export interface BoardElement {
@@ -49,10 +50,10 @@ export class CanvasBoard {
   private cssW = 0;
   private cssH: number;
   private listeners = new Map<EventName, Set<(e: PointerEvent | TouchEvent) => void>>();
-  private panState: { lastMidX: number; lastMidY: number } | null = null;
   private boundHandlers: { type: string; fn: (e: Event) => void }[] = [];
   private resizeObserver: ResizeObserver | null = null;
   private keepAspectRatio: boolean = false;
+  private targetTicks: number = 8;
 
   constructor(container: HTMLElement, options: BoardOptions = {}) {
     const defaults: Required<BoardOptions> = {
@@ -61,11 +62,13 @@ export class CanvasBoard {
       axis: true,
       height: 350,
       keepAspectRatio: false,
+      targetTicks: 8,
     };
     const opts = { ...defaults, ...options };
     this.bbox = [...opts.boundingBox];
     this.originalBbox = [...opts.boundingBox];
     this.keepAspectRatio = opts.keepAspectRatio;
+    this.targetTicks = opts.targetTicks;
     this.container = container;
     this.dpr = window.devicePixelRatio || 1;
     this.cssH = opts.height;
@@ -204,8 +207,8 @@ export class CanvasBoard {
   }
 
   private drawGrid(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const xStep = niceStep(this.xRange);
-    const yStep = niceStep(this.yRange);
+    const xStep = niceStep(this.xRange, this.targetTicks);
+    const yStep = niceStep(this.yRange, this.targetTicks);
 
     ctx.strokeStyle = GRID_COLOR;
     ctx.lineWidth = 0.5;
@@ -231,8 +234,8 @@ export class CanvasBoard {
   }
 
   private drawAxes(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const xStep = niceStep(this.xRange);
-    const yStep = niceStep(this.yRange);
+    const xStep = niceStep(this.xRange, this.targetTicks);
+    const yStep = niceStep(this.yRange, this.targetTicks);
     const axisX = this.toScreenX(0);
     const axisY = this.toScreenY(0);
 
@@ -325,50 +328,14 @@ export class CanvasBoard {
       this.emit('up', e);
     };
 
-    // Two-finger pan
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length >= 2) {
-        e.preventDefault();
-        const mid = touchMidpoint(e);
-        this.panState = { lastMidX: mid[0], lastMidY: mid[1] };
-      }
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      if (this.panState && e.touches.length >= 2) {
-        e.preventDefault();
-        const mid = touchMidpoint(e);
-        const [mx1, my1] = this.toMathCoords(this.panState.lastMidX, this.panState.lastMidY);
-        const [mx2, my2] = this.toMathCoords(mid[0], mid[1]);
-        const dx = mx1 - mx2;
-        const dy = my1 - my2;
-        this.bbox = [
-          this.bbox[0] + dx, this.bbox[1] + dy,
-          this.bbox[2] + dx, this.bbox[3] + dy,
-        ];
-        this.panState = { lastMidX: mid[0], lastMidY: mid[1] };
-        this.update();
-      }
-    };
-    const onTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) {
-        this.panState = null;
-      }
-    };
-
     el.addEventListener('pointerdown', onPointerDown);
     el.addEventListener('pointermove', onPointerMove);
     el.addEventListener('pointerup', onPointerUp);
-    el.addEventListener('touchstart', onTouchStart, { passive: false });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd);
 
     this.boundHandlers = [
       { type: 'pointerdown', fn: onPointerDown as (e: Event) => void },
       { type: 'pointermove', fn: onPointerMove as (e: Event) => void },
       { type: 'pointerup', fn: onPointerUp as (e: Event) => void },
-      { type: 'touchstart', fn: onTouchStart as (e: Event) => void },
-      { type: 'touchmove', fn: onTouchMove as (e: Event) => void },
-      { type: 'touchend', fn: onTouchEnd as (e: Event) => void },
     ];
   }
 
@@ -387,8 +354,3 @@ export class CanvasBoard {
   }
 }
 
-function touchMidpoint(e: TouchEvent): [number, number] {
-  const t0 = e.touches[0];
-  const t1 = e.touches[1];
-  return [(t0.clientX + t1.clientX) / 2, (t0.clientY + t1.clientY) / 2];
-}

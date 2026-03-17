@@ -9,6 +9,7 @@ const DEFAULTS: Required<BoardOptions> = {
   axis: true,
   height: 350,
   keepAspectRatio: false,
+  targetTicks: 8,
 };
 
 export function createBoard(
