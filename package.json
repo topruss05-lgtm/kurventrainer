@@ -15,6 +15,7 @@
     "vite": "^7.3.1"
   },
   "dependencies": {
+    "katex": "^0.16.38",
     "vite-plugin-pwa": "^1.2.0"
   }
 }

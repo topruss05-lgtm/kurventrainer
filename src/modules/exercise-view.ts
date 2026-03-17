@@ -6,11 +6,14 @@ import { renderTrueFalse } from '../exercises/true-false.js';
 import { renderGraphAssignment } from '../exercises/graph-assignment.js';
 import { renderReverseInference } from '../exercises/reverse-inference.js';
 import { renderStepByStep } from '../exercises/step-by-step.js';
+import { renderFreeMode } from '../exercises/free-mode.js';
 import { renderContextInterpretation } from '../exercises/context-interpretation.js';
 import { renderGraphSketch } from '../exercises/graph-sketch.js';
 import { renderContradictionArgument } from '../exercises/contradiction-argument.js';
 import { renderTransformationReasoning } from '../exercises/transformation-reasoning.js';
 import type { Exercise, ModuleId, ExerciseType, CompetencyLevel } from '../types/exercise.js';
+
+type StepByStepMode = 'guided' | 'free';
 
 export function renderExerciseView(
   container: HTMLElement,
@@ -30,14 +33,14 @@ export function renderExerciseView(
 
     const text = document.createElement('p');
     text.style.cssText = 'margin-bottom: 1rem; color: var(--color-ink-secondary); font-size: 0.9rem;';
-    text.textContent = 'Noch keine Aufgaben f\u00fcr diese Kombination vorhanden.';
+    text.textContent = 'Noch keine Aufgaben für diese Kombination vorhanden.';
 
     const backBtn = document.createElement('button');
     backBtn.style.cssText = `
       background: none; border: none; cursor: pointer; padding: 0;
       font-size: 0.8rem; color: var(--color-primary); transition: opacity 0.15s;
     `;
-    backBtn.textContent = '\u2190 Zur\u00fcck zum Modul';
+    backBtn.textContent = '\u2190 Zurück zum Modul';
     backBtn.addEventListener('click', () => navigate({ page: 'module', moduleId }));
 
     msg.append(text, backBtn);
@@ -45,8 +48,11 @@ export function renderExerciseView(
     return null;
   }
 
+  const isStepByStep = exercises.every(e => e.type === 'step-by-step');
+
   let currentIndex = 0;
   let destroyExercise: (() => void) | null = null;
+  let selectedMode: StepByStepMode = 'guided';
 
   // ─── Back button ───
   const backBtn = document.createElement('button');
@@ -56,7 +62,7 @@ export function renderExerciseView(
     font-size: 0.8rem; color: var(--color-ink-muted); transition: color 0.15s;
     margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.375rem;
   `;
-  backBtn.textContent = '\u2190 Zur\u00fcck';
+  backBtn.textContent = '\u2190 Zurück';
   backBtn.addEventListener('mouseenter', () => { backBtn.style.color = 'var(--color-primary)'; });
   backBtn.addEventListener('mouseleave', () => { backBtn.style.color = 'var(--color-ink-muted)'; });
   backBtn.addEventListener('click', () => navigate({ page: 'module', moduleId }));
@@ -84,6 +90,26 @@ export function renderExerciseView(
   progressTrack.appendChild(progressFill);
   progressWrap.append(progressText, progressTrack);
 
+  // ─── Mode picker (only for step-by-step exercises) ───
+  let modePicker: HTMLElement | null = null;
+  if (isStepByStep) {
+    modePicker = createModePicker((mode) => {
+      selectedMode = mode;
+      // Update active states
+      const btns = modePicker!.querySelectorAll<HTMLElement>('[data-mode]');
+      btns.forEach(btn => {
+        const isActive = btn.dataset.mode === mode;
+        btn.style.borderColor = isActive
+          ? (mode === 'guided' ? 'var(--color-primary)' : 'var(--color-accent)')
+          : 'var(--color-border)';
+        btn.style.backgroundColor = isActive
+          ? (mode === 'guided' ? 'var(--color-primary-light)' : 'var(--color-accent-light)')
+          : '';
+      });
+      renderCurrentExercise();
+    });
+  }
+
   // ─── Exercise card ───
   const exerciseContainer = document.createElement('div');
   exerciseContainer.className = 'card';
@@ -96,7 +122,7 @@ export function renderExerciseView(
     font-size: 0.9rem; font-weight: 500; cursor: pointer;
     transition: background-color 0.2s, box-shadow 0.2s;
   `;
-  nextBtn.textContent = 'N\u00e4chste Aufgabe \u2192';
+  nextBtn.textContent = 'Nächste Aufgabe \u2192';
   nextBtn.addEventListener('mouseenter', () => {
     nextBtn.style.backgroundColor = 'var(--color-accent-dark)';
     nextBtn.style.boxShadow = '0 2px 8px rgba(224,122,58,0.25)';
@@ -113,7 +139,11 @@ export function renderExerciseView(
     renderCurrentExercise();
   });
 
-  container.append(backBtn, progressWrap, exerciseContainer, nextBtn);
+  if (modePicker) {
+    container.append(backBtn, progressWrap, modePicker, exerciseContainer, nextBtn);
+  } else {
+    container.append(backBtn, progressWrap, exerciseContainer, nextBtn);
+  }
 
   function renderCurrentExercise(): void {
     destroyExercise?.();
@@ -137,7 +167,7 @@ export function renderExerciseView(
       nextBtn.style.display = 'block';
     };
 
-    destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete);
+    destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete, selectedMode);
   }
 
   renderCurrentExercise();
@@ -147,10 +177,93 @@ export function renderExerciseView(
   };
 }
 
+function createModePicker(onSelect: (mode: StepByStepMode) => void): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'animate-fade-in';
+  wrap.style.cssText = `
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    margin-bottom: 1rem;
+  `;
+
+  const guidedBtn = createModeCard(
+    'Geführt',
+    'Schritt für Schritt durch das Verfahren',
+    'guided',
+    'var(--color-primary)',
+    'var(--color-primary-light)',
+    true,
+  );
+
+  const freeBtn = createModeCard(
+    'Frei rechnen',
+    'Selbst rechnen und Ergebnis prüfen',
+    'free',
+    'var(--color-accent)',
+    'var(--color-accent-light)',
+    false,
+  );
+
+  guidedBtn.addEventListener('click', () => onSelect('guided'));
+  freeBtn.addEventListener('click', () => onSelect('free'));
+
+  wrap.append(guidedBtn, freeBtn);
+  return wrap;
+}
+
+function createModeCard(
+  title: string,
+  subtitle: string,
+  mode: StepByStepMode,
+  accentColor: string,
+  accentBg: string,
+  activeByDefault: boolean,
+): HTMLElement {
+  const card = document.createElement('button');
+  card.dataset.mode = mode;
+  card.style.cssText = `
+    display: flex; flex-direction: column; gap: 0.25rem;
+    padding: 0.875rem 1rem;
+    background: ${activeByDefault ? accentBg : 'var(--color-surface-card)'};
+    border: 2px solid ${activeByDefault ? accentColor : 'var(--color-border)'};
+    border-radius: 0.75rem;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+  `;
+
+  card.addEventListener('mouseenter', () => {
+    if (card.style.borderColor !== accentColor) {
+      card.style.borderColor = 'var(--color-border-hover)';
+      card.style.boxShadow = 'var(--shadow-card-hover)';
+    }
+  });
+  card.addEventListener('mouseleave', () => {
+    if (card.style.backgroundColor !== accentBg) {
+      card.style.borderColor = 'var(--color-border)';
+      card.style.boxShadow = 'none';
+    }
+  });
+
+  const titleEl = document.createElement('span');
+  titleEl.style.cssText = `
+    font-family: var(--font-display); font-weight: 700; font-size: 0.9rem;
+    color: var(--color-ink);
+  `;
+  titleEl.textContent = title;
+
+  const subtitleEl = document.createElement('span');
+  subtitleEl.style.cssText = 'font-size: 0.8rem; color: var(--color-ink-muted);';
+  subtitleEl.textContent = subtitle;
+
+  card.append(titleEl, subtitleEl);
+  return card;
+}
+
 function renderExerciseByType(
   container: HTMLElement,
   exercise: Exercise,
   onComplete: () => void,
+  mode: StepByStepMode = 'guided',
 ): (() => void) | null {
   switch (exercise.type) {
     case 'criteria-quiz':
@@ -164,7 +277,9 @@ function renderExerciseByType(
     case 'reverse-inference':
       return renderReverseInference(container, exercise, onComplete);
     case 'step-by-step':
-      return renderStepByStep(container, exercise, onComplete);
+      return mode === 'free'
+        ? renderFreeMode(container, exercise, onComplete)
+        : renderStepByStep(container, exercise, onComplete);
     case 'context-interpretation':
       return renderContextInterpretation(container, exercise, onComplete);
     case 'graph-sketch':

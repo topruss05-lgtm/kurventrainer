@@ -2,6 +2,8 @@ import type { StepByStepExercise } from '../types/exercise.js';
 import { recordResult } from '../progress/storage.js';
 import { createBoard, destroyBoard, calcBoundingBox } from '../graph/board-factory.js';
 import { plotFunction, highlightPoint, COLORS } from '../graph/function-plotter.js';
+import { renderExerciseLatex, setMathOrText } from '../render-latex.js';
+import { PROCEDURE_LABELS } from './procedure-labels.js';
 
 function validateNumber(input: string, correct: number, tolerance: number): boolean {
   const trimmed = input.trim();
@@ -71,10 +73,18 @@ export function renderStepByStep(
   header.appendChild(procedureLabel);
 
   const fnDisplay = document.createElement('h3');
-  fnDisplay.className = 'text-xl font-semibold';
+  fnDisplay.className = 'text-xl font-semibold mb-3';
   fnDisplay.style.fontFamily = 'var(--font-display)';
-  fnDisplay.textContent = exercise.function.latex;
+  renderExerciseLatex(fnDisplay, exercise.function.latex);
   header.appendChild(fnDisplay);
+
+  const taskLabel = PROCEDURE_LABELS[exercise.procedure];
+  if (taskLabel) {
+    const taskEl = document.createElement('p');
+    taskEl.style.cssText = 'color: var(--color-ink-secondary); font-size: 0.95rem;';
+    taskEl.textContent = taskLabel;
+    header.appendChild(taskEl);
+  }
 
   const stepsContainer = document.createElement('div');
 
@@ -130,7 +140,7 @@ export function renderStepByStep(
           btn.className =
             'p-3 rounded-xl border text-center transition-all cursor-pointer min-h-[44px]';
           btn.style.borderColor = 'var(--color-border)';
-          btn.textContent = option;
+          setMathOrText(btn, option);
 
           btn.addEventListener('click', () => {
             if (btn.dataset.locked === 'true') return;
@@ -518,7 +528,7 @@ export function renderStepByStep(
       const right = document.createElement('span');
       right.className = 'text-sm font-semibold';
       right.style.color = 'var(--color-success)';
-      right.textContent = answerDisplay;
+      setMathOrText(right, answerDisplay);
 
       summary.append(left, right);
       body.appendChild(summary);
