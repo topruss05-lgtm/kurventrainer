@@ -9,9 +9,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Kurventrainer',
-        short_name: 'Kurventrainer',
-        description: 'Interaktiver Trainer für Extremstellen, Wendestellen & Ableitungen',
+        name: 'Kurvendiskussion',
+        short_name: 'Kurvendiskussion',
+        description: 'Monotonie, Extremstellen & Wendepunkte interaktiv verstehen',
         theme_color: '#0d7377',
         background_color: '#faf8f5',
         display: 'standalone',

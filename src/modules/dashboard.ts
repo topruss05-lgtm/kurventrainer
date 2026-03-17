@@ -18,7 +18,7 @@ export function renderDashboard(container: HTMLElement): (() => void) | null {
   const h1 = document.createElement('h1');
   h1.className = 'text-3xl font-extrabold tracking-tight mb-1';
   h1.style.color = 'var(--color-primary)';
-  h1.textContent = 'Kurventrainer';
+  h1.textContent = 'Kurvendiskussion';
 
   const subtitle = document.createElement('p');
   subtitle.style.color = 'var(--color-ink-muted)';
@@ -154,10 +154,10 @@ export function renderDashboard(container: HTMLElement): (() => void) | null {
   resetBtn.addEventListener('click', () => {
     if (confirm('Wirklich allen Fortschritt l\u00f6schen?')) {
       resetAllProgress();
-      navigate({ page: 'dashboard' });
+      window.location.reload();
     }
   });
 
-  container.append(header, grid, cheatBtn, resetBtn);
+  container.append(header, cheatBtn, grid, resetBtn);
   return null;
 }
