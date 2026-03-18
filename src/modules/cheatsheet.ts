@@ -658,13 +658,13 @@ function buildMonotonieExtremstellenSection(
   ]);
   // Construction points for voiceover animation (slope values plotted on f'-board)
   const SQRT2 = Math.sqrt(2);
-  const constructionData: { x: number; slope: number; label: string }[] = [
-    { x: -2.47, slope: 3, label: 'm = 3' },
-    { x: SQRT2, slope: f1(SQRT2), label: 'm \u2248 \u22121' },
-    { x: 2, slope: 0, label: 'm = 0' },
+  const constructionData = [
+    { x: -2.47, slope: 3 },
+    { x: SQRT2, slope: f1(SQRT2) },
+    { x: 2, slope: 0 },
   ];
   const constructionPts = constructionData.map(d => {
-    const pt = createPoint(d.x, d.slope, { color: '#e07a3a', size: 7, label: d.label, labelOffset: [6, -8] });
+    const pt = createPoint(d.x, d.slope, { color: '#e07a3a', size: 7 });
     pt.visible = false;
     boardF1.addElement(pt);
     return pt;
@@ -1309,31 +1309,35 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       for (const pt of h.constructionPts) pt.visible = false;
       h.traceCurve.visible = false;
     }},
-    // Example 1: tangent on f only (no derivDot on f')
+    // Example 1: tangent on f only
     { time: T.example1, action: () => {
       h.showTangentOnly(-2.47);
     }},
-    // "Diesen Wert tragen wir als Punkt ein" — f'-board appears + point
+    // "Diesen Wert tragen wir als Punkt ein" — f'-board appears (empty)
     { time: T.example1Point, action: () => {
       h.boardF1.canvas.style.display = '';
+      h.boardF1.update();
+    }},
+    // Point 1 appears AFTER the sentence (VTT: sentence ends ~16.0s)
+    { time: T.example2 - 0.5, action: () => {
       h.constructionPts[0].visible = true;
       h.boardF1.update();
     }},
-    // Example 2: tangent first (no point)
+    // Example 2: tangent first
     { time: T.example2, action: () => {
       h.showTangentOnly(Math.sqrt(2));
     }},
-    // Example 2: point appears delayed
-    { time: T.example2 + 1.5, action: () => {
+    // Example 2: point ~2s after tangent
+    { time: T.example3 - 0.5, action: () => {
       h.constructionPts[1].visible = true;
       h.boardF1.update();
     }},
-    // Example 3: tangent first (no point)
+    // Example 3: tangent first
     { time: T.example3, action: () => {
       h.showTangentOnly(2);
     }},
-    // Example 3: point appears delayed
-    { time: T.example3 + 1.5, action: () => {
+    // Example 3: point delayed
+    { time: T.example3 + 1.8, action: () => {
       h.constructionPts[2].visible = true;
       h.boardF1.update();
     }},
@@ -1474,7 +1478,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.boardF1.update();
       // Hide construction pts as sweep dot passes
       for (let i = 0; i < h.constructionPts.length; i++) {
-        if (h.constructionPts[i].visible && mx > constructionXPositions[i] + 0.3) {
+        if (h.constructionPts[i].visible && mx >= constructionXPositions[i]) {
           h.constructionPts[i].visible = false;
         }
       }
