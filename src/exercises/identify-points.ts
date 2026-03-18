@@ -522,14 +522,11 @@ function renderClassifyIntervalExercise(
       const xTo = sel.to === '+\u221e' ? bb[2] : sel.to as number;
 
       if (lockedIndices.has(idx)) {
-        // Gelockt: normales Farbband + wei\u00dfes Overlay faded alles aus
+        // Gelockt: dezentes Farbband (Kurve + Gitter bleiben voll sichtbar)
         const color = sel.type === 'smw' ? SMW_COLOR : SMF_COLOR;
-        const colorBand = createIntervalBand(xFrom, xTo, { color, opacity: 0.15 });
-        board.addElement(colorBand);
-        bandElements.push(colorBand);
-        const fade = createIntervalBand(xFrom, xTo, { color: '#ffffff', opacity: 0.55 });
-        board.addElement(fade);
-        bandElements.push(fade);
+        const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.06 });
+        board.addElement(band);
+        bandElements.push(band);
       } else if (sel.type) {
         // Aktive Auswahl: normal farbig
         const color = sel.type === 'smw' ? SMW_COLOR : SMF_COLOR;
