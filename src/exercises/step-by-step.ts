@@ -129,7 +129,7 @@ export function renderStepByStep(
         grid.style.gap = '8px';
 
         const options = step.options ?? [];
-        options.forEach((option) => {
+        options.forEach((option, optIdx) => {
           const btn = document.createElement('button');
           btn.className =
             'p-3 rounded-xl border text-center transition-all cursor-pointer min-h-[44px]';
@@ -139,7 +139,11 @@ export function renderStepByStep(
           btn.addEventListener('click', () => {
             if (btn.dataset.locked === 'true') return;
 
-            const correct = String(step.correctAnswer) === option;
+            // Support both index-based and string-based correctAnswer
+            const ca = step.correctAnswer;
+            const correct = typeof ca === 'number'
+              ? ca === optIdx
+              : String(ca) === option;
 
             const allBtns = grid.querySelectorAll('button');
             allBtns.forEach(b => {
