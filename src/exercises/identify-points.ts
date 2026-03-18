@@ -425,7 +425,9 @@ function renderTwoPhaseIntervalExercise(
         onComplete();
       } else if (p2Attempts === 1) {
         p2Feedback.className = 'feedback-incorrect animate-fade-in';
-        p2Feedback.textContent = 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).';
+        p2Feedback.textContent = exercise.prompt.includes('f\u2019')
+          ? 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).'
+          : 'Nicht ganz. Tipp: Schau ob die Kurve nach rechts oben geht (steigend) oder nach rechts unten (fallend).';
       } else {
         phase2Answered = true;
         recordResult(exercise.module, exercise.id, false);
@@ -649,7 +651,9 @@ function renderClassifyIntervalExercise(
     } else if (attempts === 1) {
       // Erster Fehler: Tipp geben, nochmal probieren lassen
       feedbackDiv.className = 'feedback-incorrect animate-fade-in';
-      feedbackDiv.textContent = 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).';
+      feedbackDiv.textContent = exercise.prompt.includes('f\u2019')
+          ? 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).'
+          : 'Nicht ganz. Tipp: Schau ob die Kurve nach rechts oben geht (steigend) oder nach rechts unten (fallend).';
 
       // Falsche Intervalle rot markieren, dann nach kurzer Pause Reset
       selections.forEach((sel, idx) => {
