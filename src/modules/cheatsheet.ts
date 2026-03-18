@@ -727,7 +727,7 @@ function buildMonotonieExtremstellenSection(
     zoneX,
     setGraphState, showAtX, hideGraphics,
     hidePointExtras() { derivDot.visible = false; boardF1.update(); },
-    onZoneChange(zone) { zone === 'sp' ? showSpCallout() : hideSpCallout(); },
+    onZoneChange() { hideSpCallout(); },
   });
 
   rulesContainer.appendChild(makeRuleCard('Streng monoton wachsend (smw)', ["f'(x) > 0 f\u00fcr alle x im Intervall"], 'steigend', ctrl.cards, ctrl.onCardClick));
@@ -748,6 +748,8 @@ function buildMonotonieExtremstellenSection(
   const steigendRanges: [number, number][] = [[-3.5, -2], [2, 3.5]];
   const fallendRanges: [number, number][] = [[-2, 0], [0, 2]];
 
+  const SP_SNAP = 0.35;  // wider snap zone for SP detection in smf mode
+
   const onMove = (e: PointerEvent | TouchEvent) => {
     const isPointZone = ctrl.activeClickZone === 'hp' || ctrl.activeClickZone === 'tp' || ctrl.activeClickZone === 'sp';
     if (isPointZone) return;
@@ -760,7 +762,7 @@ function buildMonotonieExtremstellenSection(
     if (mx < bb[0] + 0.5 || mx > bb[2] - 0.5) { onLeave(); return; }
 
     if (ctrl.activeClickZone === 'steigend' && !isInRanges(mx, steigendRanges)) { hideGraphics(); return; }
-    if (ctrl.activeClickZone === 'fallend' && !isInRanges(mx, fallendRanges)) { hideGraphics(); return; }
+    if (ctrl.activeClickZone === 'fallend' && !isInRanges(mx, fallendRanges)) { hideGraphics(); hideSpCallout(); return; }
 
     // Snap to critical points (only when no interval zone is selected)
     if (!ctrl.activeClickZone || (ctrl.activeClickZone !== 'steigend' && ctrl.activeClickZone !== 'fallend')) {
@@ -772,16 +774,20 @@ function buildMonotonieExtremstellenSection(
     const isIntervalActive = ctrl.activeClickZone === 'steigend' || ctrl.activeClickZone === 'fallend';
     const snappedZone = isIntervalActive ? 'none' : detectZone(mx, criticals, SNAP);
 
+    // Show smf callout when in fallend mode and hovering near SP
+    if (ctrl.activeClickZone === 'fallend') {
+      Math.abs(mx) < SP_SNAP ? showSpCallout() : hideSpCallout();
+    }
+
     if (snappedZone !== 'none') {
       if (snappedZone === 'sp') {
-        // SP doesn't break mf -- keep fallend segments colored, just add the SP point
+        // SP doesn't break smf -- keep fallend segments colored, just add the SP point
         setGraphState('segment', undefined, 1);
         for (const p of allPts) p.colored.visible = p.zone === 'sp';
         boardF.update(); boardF1.update();
         showAtX(mx);
         derivDot.visible = false;
         boardF1.update();
-        showSpCallout();
         if (!ctrl.activeClickZone) {
           highlightCardsMulti(ctrl.cards, ['fallend', 'sp']);
           highlightNachweisColumns(ctrl.nachweisColumns, ctrl.nachweisZones, 'sp');
@@ -791,7 +797,6 @@ function buildMonotonieExtremstellenSection(
         showAtX(mx);
         derivDot.visible = false;
         boardF1.update();
-        hideSpCallout();
         if (!ctrl.activeClickZone) ctrl.highlightZone(snappedZone);
       }
     } else {
@@ -799,7 +804,6 @@ function buildMonotonieExtremstellenSection(
       if (idx !== null) {
         setGraphState('segment', undefined, idx);
         showAtX(mx);
-        hideSpCallout();
         if (!ctrl.activeClickZone) {
           const zone = segRanges[idx].zone;
           ctrl.highlightZone(zone);
@@ -815,8 +819,7 @@ function buildMonotonieExtremstellenSection(
         hideGraphics();
         setGraphState('zone', ctrl.activeClickZone);
       }
-      // Keep callout visible if SP is click-locked
-      if (ctrl.activeClickZone !== 'sp') hideSpCallout();
+      hideSpCallout();
       return;
     }
     hideGraphics();
