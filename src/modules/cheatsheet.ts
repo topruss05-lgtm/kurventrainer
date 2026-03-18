@@ -634,37 +634,52 @@ function buildMonotonieExtremstellenSection(
   const spText = document.createElement('p');
   spText.style.cssText = S.spCalloutText;
 
-  const emDef = document.createElement('span');
-  emDef.style.cssText = S.spCalloutEmphasis;
-  emDef.textContent = "smf";
+  const emZero = document.createElement('span');
+  emZero.style.cssText = S.spCalloutEmphasis;
+  emZero.textContent = "f\u2009\u2032(x\u2080)\u2009=\u20090";
+
+  const emReverse = document.createElement('span');
+  emReverse.style.cssText = S.spCalloutEmphasis;
+  emReverse.textContent = "Aber andersrum gilt das nicht:";
 
   const emKey = document.createElement('span');
   emKey.style.cssText = S.spCalloutEmphasis;
-  emKey.textContent = "Funktionswerte werden trotzdem immer kleiner";
+  emKey.textContent = "Funktionswerte immer kleiner werden";
 
   spText.append(
-    "Am Sattelpunkt ist f\u2009\u2032(x\u2080)\u2009=\u20090 \u2014 aber f ist weiterhin ",
-    emDef,
-    ". Warum? Weil streng monoton nur die Funktionswerte vergleicht: die ",
+    emZero,
+    " \u2014 ist das ein Widerspruch zu smf? Nein! Wenn die Ableitung \u00fcberall negativ ist, dann ist f streng monoton fallend. ",
+    emReverse,
+    " f kann auch dann smf sein, wenn f\u2009\u2032 an einzelnen Stellen Null ist \u2014 solange die ",
     emKey,
-    ". Ein einzelner Punkt mit Steigung\u20090 \u00e4ndert daran nichts.",
+    ". Und genau das passiert hier.",
   );
 
   spCallout.append(spIcon, spText);
   graphContainer.appendChild(spCallout);
 
   let spCalloutVisible = false;
+  let spHideTimer = 0;
   function showSpCallout(): void {
+    clearTimeout(spHideTimer);
     if (spCalloutVisible) return;
     spCalloutVisible = true;
     spCallout.style.maxHeight = '0';
     void spCallout.offsetHeight; // reflow
     spCallout.style.cssText = S.spCallout + S.spCalloutVisible;
   }
-  function hideSpCallout(): void {
+  function hideSpCallout(immediate = false): void {
+    clearTimeout(spHideTimer);
     if (!spCalloutVisible) return;
-    spCalloutVisible = false;
-    spCallout.style.cssText = S.spCallout;
+    if (immediate) {
+      spCalloutVisible = false;
+      spCallout.style.cssText = S.spCallout;
+    } else {
+      spHideTimer = window.setTimeout(() => {
+        spCalloutVisible = false;
+        spCallout.style.cssText = S.spCallout;
+      }, 180);
+    }
   }
 
   // ─ Graph state ─
@@ -727,7 +742,7 @@ function buildMonotonieExtremstellenSection(
     zoneX,
     setGraphState, showAtX, hideGraphics,
     hidePointExtras() { derivDot.visible = false; boardF1.update(); },
-    onZoneChange() { hideSpCallout(); },
+    onZoneChange(zone) { (zone === 'sp' || zone === 'fallend') ? showSpCallout() : hideSpCallout(true); },
   });
 
   rulesContainer.appendChild(makeRuleCard('Streng monoton wachsend (smw)', ["f'(x) > 0 f\u00fcr alle x im Intervall"], 'steigend', ctrl.cards, ctrl.onCardClick));
@@ -748,7 +763,6 @@ function buildMonotonieExtremstellenSection(
   const steigendRanges: [number, number][] = [[-3.5, -2], [2, 3.5]];
   const fallendRanges: [number, number][] = [[-2, 0], [0, 2]];
 
-  const SP_SNAP = 0.35;  // wider snap zone for SP detection in smf mode
 
   const onMove = (e: PointerEvent | TouchEvent) => {
     const isPointZone = ctrl.activeClickZone === 'hp' || ctrl.activeClickZone === 'tp' || ctrl.activeClickZone === 'sp';
@@ -762,7 +776,7 @@ function buildMonotonieExtremstellenSection(
     if (mx < bb[0] + 0.5 || mx > bb[2] - 0.5) { onLeave(); return; }
 
     if (ctrl.activeClickZone === 'steigend' && !isInRanges(mx, steigendRanges)) { hideGraphics(); return; }
-    if (ctrl.activeClickZone === 'fallend' && !isInRanges(mx, fallendRanges)) { hideGraphics(); hideSpCallout(); return; }
+    if (ctrl.activeClickZone === 'fallend' && !isInRanges(mx, fallendRanges)) { hideGraphics(); return; }
 
     // Snap to critical points (only when no interval zone is selected)
     if (!ctrl.activeClickZone || (ctrl.activeClickZone !== 'steigend' && ctrl.activeClickZone !== 'fallend')) {
@@ -774,10 +788,8 @@ function buildMonotonieExtremstellenSection(
     const isIntervalActive = ctrl.activeClickZone === 'steigend' || ctrl.activeClickZone === 'fallend';
     const snappedZone = isIntervalActive ? 'none' : detectZone(mx, criticals, SNAP);
 
-    // Show smf callout when in fallend mode and hovering near SP
-    if (ctrl.activeClickZone === 'fallend') {
-      Math.abs(mx) < SP_SNAP ? showSpCallout() : hideSpCallout();
-    }
+    // SP callout: always visible when smf is locked (handled by onZoneChange),
+    // only hover-toggle when free-hovering (handled below in snappedZone === 'sp')
 
     if (snappedZone !== 'none') {
       if (snappedZone === 'sp') {
@@ -788,6 +800,7 @@ function buildMonotonieExtremstellenSection(
         showAtX(mx);
         derivDot.visible = false;
         boardF1.update();
+        showSpCallout();
         if (!ctrl.activeClickZone) {
           highlightCardsMulti(ctrl.cards, ['fallend', 'sp']);
           highlightNachweisColumns(ctrl.nachweisColumns, ctrl.nachweisZones, 'sp');
@@ -797,7 +810,7 @@ function buildMonotonieExtremstellenSection(
         showAtX(mx);
         derivDot.visible = false;
         boardF1.update();
-        if (!ctrl.activeClickZone) ctrl.highlightZone(snappedZone);
+        if (!ctrl.activeClickZone) { hideSpCallout(true); ctrl.highlightZone(snappedZone); }
       }
     } else {
       const idx = getSegIndex(mx);
@@ -805,6 +818,7 @@ function buildMonotonieExtremstellenSection(
         setGraphState('segment', undefined, idx);
         showAtX(mx);
         if (!ctrl.activeClickZone) {
+          hideSpCallout(true);
           const zone = segRanges[idx].zone;
           ctrl.highlightZone(zone);
         }
@@ -819,7 +833,8 @@ function buildMonotonieExtremstellenSection(
         hideGraphics();
         setGraphState('zone', ctrl.activeClickZone);
       }
-      hideSpCallout();
+      // Keep callout visible when SP or smf is locked
+      if (ctrl.activeClickZone !== 'sp' && ctrl.activeClickZone !== 'fallend') hideSpCallout(true);
       return;
     }
     hideGraphics();
