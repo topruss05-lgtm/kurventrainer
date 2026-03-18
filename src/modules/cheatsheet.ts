@@ -71,6 +71,38 @@ const S = {
     border: none; height: 0; margin: 3rem 0;
   `,
   idleBorder: 'rgba(13, 115, 119, 0.2)',
+  spCallout: `
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem 0.75rem 0.875rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, #f9f6f3 0%, #f4f0ec 100%);
+    border: 1px solid #e0dbd4;
+    border-left: 3px solid #7a7067;
+    display: flex; align-items: flex-start; gap: 0.625rem;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 4px rgba(122, 112, 103, 0.08);
+    overflow: hidden; max-height: 0;
+  `,
+  spCalloutVisible: `
+    opacity: 1; transform: translateY(0);
+    max-height: 8rem;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.35s ease-out;
+  `,
+  spCalloutIcon: `
+    flex-shrink: 0; width: 1.375rem; height: 1.375rem; margin-top: 0.0625rem;
+    background: #7a7067; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; color: #fff; font-weight: 700;
+    font-family: var(--font-display); line-height: 1;
+  `,
+  spCalloutText: `
+    font-size: 0.75rem; line-height: 1.55; color: #4a4a68;
+    font-family: var(--font-body);
+  `,
+  spCalloutEmphasis: `
+    font-family: var(--font-display); font-weight: 700; color: #7a7067;
+  `,
 } as const;
 
 // ── Shared constants ────────────────────────────────────────────────
@@ -437,6 +469,7 @@ function makeSectionCtrl(opts: {
   showAtX: (mx: number) => void;
   hideGraphics: () => void;
   hidePointExtras: () => void;
+  onZoneChange?: (zone: ZoneId | null) => void;
 }): SectionCtrl {
   const cards: RuleCard[] = [];
   const nachweisColumns: HTMLElement[] = [];
@@ -459,6 +492,7 @@ function makeSectionCtrl(opts: {
       opts.hideGraphics();
       ctrl.clearHighlights();
       opts.setGraphState('blank');
+      opts.onZoneChange?.(null);
     },
     onCardClick(zone: ZoneId) {
       if (ctrl.activeClickZone === zone) {
@@ -475,6 +509,7 @@ function makeSectionCtrl(opts: {
           opts.showAtX(opts.zoneX[zone]);
           opts.hidePointExtras();
         }
+        opts.onZoneChange?.(zone);
       }
     },
     onNachweisClick(zone: ZoneId) {
@@ -486,6 +521,7 @@ function makeSectionCtrl(opts: {
         opts.setGraphState('point', zone);
         opts.showAtX(opts.zoneX[zone]);
         opts.hidePointExtras();
+        opts.onZoneChange?.(zone);
       }
     },
   };
@@ -587,6 +623,49 @@ function buildMonotonieExtremstellenSection(
   ]);
   boardF1.update();
 
+  // ─ SP Callout (streng monoton Hinweis) ─
+  const spCallout = document.createElement('div');
+  spCallout.style.cssText = S.spCallout;
+
+  const spIcon = document.createElement('span');
+  spIcon.style.cssText = S.spCalloutIcon;
+  spIcon.textContent = '\u2139';
+
+  const spText = document.createElement('p');
+  spText.style.cssText = S.spCalloutText;
+
+  const emPremise = document.createElement('span');
+  emPremise.style.cssText = S.spCalloutEmphasis;
+  emPremise.textContent = "f\u2009\u2032(x\u2080)\u2009=\u20090, aber kein VZW";
+
+  const emConclusion = document.createElement('span');
+  emConclusion.style.cssText = S.spCalloutEmphasis;
+  emConclusion.textContent = "streng monoton fallend";
+
+  spText.append(
+    emPremise,
+    " \u2192 f bleibt trotzdem ",
+    emConclusion,
+    ". Der Sattelpunkt unterbricht die Monotonie nicht.",
+  );
+
+  spCallout.append(spIcon, spText);
+  graphContainer.appendChild(spCallout);
+
+  let spCalloutVisible = false;
+  function showSpCallout(): void {
+    if (spCalloutVisible) return;
+    spCalloutVisible = true;
+    spCallout.style.maxHeight = '0';
+    void spCallout.offsetHeight; // reflow
+    spCallout.style.cssText = S.spCallout + S.spCalloutVisible;
+  }
+  function hideSpCallout(): void {
+    if (!spCalloutVisible) return;
+    spCalloutVisible = false;
+    spCallout.style.cssText = S.spCallout;
+  }
+
   // ─ Graph state ─
   const allSegs = [...segsF, ...segsF1];
   const allBands = [...bandsF, ...bandsF1];
@@ -644,14 +723,14 @@ function buildMonotonieExtremstellenSection(
   // ─ Section controller ─
   const ctrl = makeSectionCtrl({
     intervalZones: ['steigend', 'fallend'],
-
     zoneX,
     setGraphState, showAtX, hideGraphics,
     hidePointExtras() { derivDot.visible = false; boardF1.update(); },
+    onZoneChange(zone) { zone === 'sp' ? showSpCallout() : hideSpCallout(); },
   });
 
-  rulesContainer.appendChild(makeRuleCard('Monoton wachsend', ["f'(x) > 0 f\u00fcr alle x im Intervall"], 'steigend', ctrl.cards, ctrl.onCardClick));
-  rulesContainer.appendChild(makeRuleCard('Monoton fallend', ["f'(x) < 0 f\u00fcr alle x im Intervall"], 'fallend', ctrl.cards, ctrl.onCardClick));
+  rulesContainer.appendChild(makeRuleCard('Streng monoton wachsend (smw)', ["f'(x) > 0 f\u00fcr alle x im Intervall"], 'steigend', ctrl.cards, ctrl.onCardClick));
+  rulesContainer.appendChild(makeRuleCard('Streng monoton fallend (smf)', ["f'(x) < 0 f\u00fcr alle x im Intervall"], 'fallend', ctrl.cards, ctrl.onCardClick));
   rulesContainer.appendChild(makeRuleCard('Lokales Maximum (Hochpunkt)', ["f'(x\u2080) = 0 und VZW von f' von + nach \u2212"], 'hp', ctrl.cards, ctrl.onCardClick));
   rulesContainer.appendChild(makeRuleCard('Lokales Minimum (Tiefpunkt)', ["f'(x\u2080) = 0 und VZW von f' von \u2212 nach +"], 'tp', ctrl.cards, ctrl.onCardClick));
   rulesContainer.appendChild(makeRuleCard('Sattelpunkt (kein Extremum)', ["f'(x\u2080) = 0, aber kein VZW von f'"], 'sp', ctrl.cards, ctrl.onCardClick));
@@ -701,6 +780,7 @@ function buildMonotonieExtremstellenSection(
         showAtX(mx);
         derivDot.visible = false;
         boardF1.update();
+        showSpCallout();
         if (!ctrl.activeClickZone) {
           highlightCardsMulti(ctrl.cards, ['fallend', 'sp']);
           highlightNachweisColumns(ctrl.nachweisColumns, ctrl.nachweisZones, 'sp');
@@ -710,6 +790,7 @@ function buildMonotonieExtremstellenSection(
         showAtX(mx);
         derivDot.visible = false;
         boardF1.update();
+        hideSpCallout();
         if (!ctrl.activeClickZone) ctrl.highlightZone(snappedZone);
       }
     } else {
@@ -717,6 +798,7 @@ function buildMonotonieExtremstellenSection(
       if (idx !== null) {
         setGraphState('segment', undefined, idx);
         showAtX(mx);
+        hideSpCallout();
         if (!ctrl.activeClickZone) {
           const zone = segRanges[idx].zone;
           ctrl.highlightZone(zone);
@@ -732,9 +814,12 @@ function buildMonotonieExtremstellenSection(
         hideGraphics();
         setGraphState('zone', ctrl.activeClickZone);
       }
+      // Keep callout visible if SP is click-locked
+      if (ctrl.activeClickZone !== 'sp') hideSpCallout();
       return;
     }
     hideGraphics();
+    hideSpCallout();
     ctrl.clearHighlights();
     setGraphState('blank');
   };

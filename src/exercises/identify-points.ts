@@ -674,19 +674,31 @@ function renderClassifyIntervalExercise(
       feedbackDiv.className = 'feedback-incorrect animate-fade-in';
       feedbackDiv.textContent = tipText;
 
-      // Richtige ausgrauen, falsche rot markieren
+      // Richtige ausgrauen (UI + Graph), falsche rot markieren
+      for (const el of bandElements) board.removeElement(el);
+      bandElements.length = 0;
+
       selections.forEach((sel, idx) => {
         const correctIv = correct[idx];
         const row = rowsContainer.children[idx] as HTMLElement;
+        const pair = intervalPairs[idx];
+        const xFrom = pair.from === '-\u221e' ? bb[0] : pair.from as number;
+        const xTo = pair.to === '+\u221e' ? bb[2] : pair.to as number;
+
         if (correctIv && sel.type === correctIv.type) {
-          // Richtig: ausgrauen + Häkchen
-          row.style.opacity = '0.45';
+          // Richtig: UI ausgrauen
+          row.style.opacity = '0.4';
           row.style.pointerEvents = 'none';
           row.style.borderColor = 'var(--color-success-border)';
+          // Graph: richtigen Bereich grau \u00fcberlagern (als "erledigt")
+          const grayBand = createIntervalBand(xFrom, xTo, { color: '#888', opacity: 0.15 });
+          board.addElement(grayBand);
+          bandElements.push(grayBand);
         } else if (correctIv && sel.type !== correctIv.type) {
           row.style.borderColor = 'var(--color-error-border)';
         }
       });
+      board.update();
 
       setTimeout(() => {
         selections.forEach((sel, idx) => {
