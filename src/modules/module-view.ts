@@ -1,6 +1,8 @@
 import { MODULE_CONFIGS } from '../config.js';
 import { navigate } from '../router.js';
 import { getAvailableExerciseTypes, getAvailableCompetencyLevels, getExerciseCountByType } from '../data/exercise-loader.js';
+import { getExerciseSet } from '../data/exercise-sets.js';
+import { getCompletedExercises } from '../progress/storage.js';
 import type { ExerciseType, CompetencyLevel } from '../types/exercise.js';
 
 const TYPE_LABELS: Record<ExerciseType, string> = {
@@ -230,22 +232,59 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
 
     content.append(title, sub);
 
-    // Count badge
-    const countBadge = document.createElement('span');
-    countBadge.style.cssText = `
-      font-family: var(--font-display); font-weight: 600; font-size: 0.7rem;
-      color: var(--color-ink-muted); white-space: nowrap; flex-shrink: 0;
-      background: var(--color-surface-inset); padding: 0.25rem 0.5rem;
-      border-radius: 0.375rem;
+    // Progress dots
+    const completedExercises = getCompletedExercises();
+    const exerciseSets = getExerciseSet(config.id);
+    const setConfig = exerciseSets.find(s => s.type === exerciseType);
+    const requiredIds = setConfig?.requiredIds ?? [];
+
+    const progressContainer = document.createElement('span');
+    progressContainer.style.cssText = `
+      display: flex; align-items: center; gap: 0.375rem; flex-shrink: 0;
     `;
-    countBadge.textContent = `${count}`;
+
+    if (requiredIds.length > 0) {
+      const dotsRow = document.createElement('span');
+      dotsRow.style.cssText = 'display: flex; align-items: center; gap: 3px;';
+
+      let completedCount = 0;
+      for (const reqId of requiredIds) {
+        const dot = document.createElement('span');
+        const done = !!completedExercises[reqId];
+        if (done) completedCount++;
+        dot.style.cssText = `
+          display: block; width: 8px; height: 8px; border-radius: 50%;
+          background: ${done ? 'var(--color-success)' : 'var(--color-border)'};
+        `;
+        dotsRow.appendChild(dot);
+      }
+
+      const countText = document.createElement('span');
+      countText.style.cssText = `
+        font-family: var(--font-display); font-weight: 600; font-size: 0.7rem;
+        color: var(--color-ink-muted); white-space: nowrap; margin-left: 0.125rem;
+      `;
+      countText.textContent = `${completedCount}/${requiredIds.length}`;
+
+      progressContainer.append(dotsRow, countText);
+    } else {
+      const countBadge = document.createElement('span');
+      countBadge.style.cssText = `
+        font-family: var(--font-display); font-weight: 600; font-size: 0.7rem;
+        color: var(--color-ink-muted); white-space: nowrap;
+        background: var(--color-surface-inset); padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+      `;
+      countBadge.textContent = `${count}`;
+      progressContainer.appendChild(countBadge);
+    }
 
     // Arrow
     const arrow = document.createElement('span');
     arrow.style.cssText = 'color: var(--color-ink-muted); opacity: 0.35; display: flex; flex-shrink: 0;';
     arrow.appendChild(svgIcon(['M9 18l6-6-6-6'], 16));
 
-    row.append(num, content, countBadge, arrow);
+    row.append(num, content, progressContainer, arrow);
     typeList.appendChild(row);
   });
 

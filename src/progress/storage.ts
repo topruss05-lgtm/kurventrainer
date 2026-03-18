@@ -42,7 +42,12 @@ export function recordResult(moduleId: ModuleId, exerciseId: string, correct: bo
   const progress = getProgress();
   const mod = progress.modules[moduleId];
   mod.total++;
-  if (correct) mod.correct++;
+  if (correct) {
+    mod.correct++;
+    // Track per-exercise completion for progress dots
+    if (!progress.completedExercises) progress.completedExercises = {};
+    progress.completedExercises[exerciseId] = true;
+  }
   mod.completed++;
   mod.lastAttempt = new Date().toISOString();
 
@@ -57,6 +62,17 @@ export function recordResult(moduleId: ModuleId, exerciseId: string, correct: bo
     progress.results = progress.results.slice(-500);
   }
 
+  saveProgress(progress);
+}
+
+export function getCompletedExercises(): Record<string, boolean> {
+  return getProgress().completedExercises ?? {};
+}
+
+export function markExerciseCompleted(exerciseId: string): void {
+  const progress = getProgress();
+  if (!progress.completedExercises) progress.completedExercises = {};
+  progress.completedExercises[exerciseId] = true;
   saveProgress(progress);
 }
 

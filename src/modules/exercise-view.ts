@@ -11,6 +11,7 @@ import { renderContextInterpretation } from '../exercises/context-interpretation
 import { renderGraphSketch } from '../exercises/graph-sketch.js';
 import { renderContradictionArgument } from '../exercises/contradiction-argument.js';
 import { renderTransformationReasoning } from '../exercises/transformation-reasoning.js';
+import { generateRandomExercise } from '../generators/registry.js';
 import type { Exercise, ModuleId, ExerciseType, CompetencyLevel } from '../types/exercise.js';
 
 type StepByStepMode = 'guided' | 'free';
@@ -21,6 +22,11 @@ export function renderExerciseView(
   type: string,
   competency: string,
 ): (() => void) | null {
+  // ─── Endlosmodus ───
+  if (type === 'random') {
+    return renderEndlessMode(container, moduleId as ModuleId);
+  }
+
   const exercises = getExercises(
     moduleId as ModuleId,
     type as ExerciseType,
@@ -33,14 +39,14 @@ export function renderExerciseView(
 
     const text = document.createElement('p');
     text.style.cssText = 'margin-bottom: 1rem; color: var(--color-ink-secondary); font-size: 0.9rem;';
-    text.textContent = 'Noch keine Aufgaben für diese Kombination vorhanden.';
+    text.textContent = 'Noch keine Aufgaben f\u00fcr diese Kombination vorhanden.';
 
     const backBtn = document.createElement('button');
     backBtn.style.cssText = `
       background: none; border: none; cursor: pointer; padding: 0;
       font-size: 0.8rem; color: var(--color-primary); transition: opacity 0.15s;
     `;
-    backBtn.textContent = '\u2190 Zurück zum Modul';
+    backBtn.textContent = '\u2190 Zur\u00fcck zum Modul';
     backBtn.addEventListener('click', () => navigate({ page: 'module', moduleId }));
 
     msg.append(text, backBtn);
@@ -291,4 +297,96 @@ function renderExerciseByType(
     default:
       return null;
   }
+}
+
+// ─── Endlosmodus: zuf\u00e4llige generierte Aufgaben ───
+
+function renderEndlessMode(
+  container: HTMLElement,
+  moduleId: ModuleId,
+): (() => void) | null {
+  let destroyExercise: (() => void) | null = null;
+  let solvedCount = 0;
+
+  // ─── Back button ───
+  const backBtn = document.createElement('button');
+  backBtn.className = 'back-link animate-fade-in';
+  backBtn.style.cssText = 'margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.375rem;';
+  backBtn.textContent = '\u2190 Zur\u00fcck';
+  backBtn.addEventListener('click', () => navigate({ page: 'module', moduleId }));
+
+  // ─── Counter ───
+  const counterWrap = document.createElement('div');
+  counterWrap.className = 'animate-fade-in';
+  counterWrap.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;';
+
+  const counterText = document.createElement('span');
+  counterText.style.cssText = `
+    font-family: var(--font-display); font-size: 0.75rem; font-weight: 600;
+    color: var(--color-ink-muted); white-space: nowrap;
+  `;
+  counterText.textContent = 'Endlosmodus \u2014 0 gel\u00f6st';
+
+  const counterBadge = document.createElement('span');
+  counterBadge.style.cssText = `
+    font-family: var(--font-display); font-size: 0.7rem; font-weight: 600;
+    color: var(--color-accent); background: var(--color-accent-light);
+    padding: 0.2rem 0.5rem; border-radius: 9999px;
+  `;
+  counterBadge.textContent = '\u221e';
+
+  counterWrap.append(counterText, counterBadge);
+
+  // ─── Exercise card ───
+  const exerciseContainer = document.createElement('div');
+  exerciseContainer.className = 'card';
+
+  // ─── Next button ───
+  const nextBtn = document.createElement('button');
+  nextBtn.style.cssText = `
+    display: none; width: 100%; margin-top: 1rem; padding: 0.75rem;
+    background: var(--color-accent); color: #fff; border: none; border-radius: 0.5rem;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+  `;
+  nextBtn.textContent = 'N\u00e4chste Aufgabe \u2192';
+  nextBtn.addEventListener('mouseenter', () => {
+    nextBtn.style.backgroundColor = 'var(--color-accent-dark)';
+    nextBtn.style.boxShadow = '0 2px 8px rgba(224,122,58,0.25)';
+  });
+  nextBtn.addEventListener('mouseleave', () => {
+    nextBtn.style.backgroundColor = 'var(--color-accent)';
+    nextBtn.style.boxShadow = 'none';
+  });
+  nextBtn.addEventListener('click', () => renderNext());
+
+  container.append(backBtn, counterWrap, exerciseContainer, nextBtn);
+
+  function renderNext(): void {
+    destroyExercise?.();
+    destroyExercise = null;
+    while (exerciseContainer.firstChild) {
+      exerciseContainer.removeChild(exerciseContainer.firstChild);
+    }
+    nextBtn.style.display = 'none';
+
+    exerciseContainer.classList.remove('animate-scale-in');
+    void exerciseContainer.offsetWidth;
+    exerciseContainer.classList.add('animate-scale-in');
+
+    const exercise = generateRandomExercise(moduleId);
+    const onComplete = () => {
+      solvedCount++;
+      counterText.textContent = `Endlosmodus \u2014 ${solvedCount} gel\u00f6st`;
+      nextBtn.style.display = 'block';
+    };
+
+    destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete);
+  }
+
+  renderNext();
+
+  return () => {
+    destroyExercise?.();
+  };
 }
