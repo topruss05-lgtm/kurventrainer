@@ -7,6 +7,7 @@ export interface ExerciseGenerator {
 export interface CaseDefinition {
   id: string;
   label: string;
+  mode?: 'guided' | 'free'; // guided = step-by-step, free = nur Endergebnis
   generate(): Exercise;
 }
 

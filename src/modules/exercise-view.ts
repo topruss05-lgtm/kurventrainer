@@ -537,6 +537,7 @@ function renderLevelMode(
 
     const exercise = currentCase.generate();
     const caseId = currentCase.id;
+    const caseMode = currentCase.mode;
 
     const onComplete = () => {
       markCaseCompleted(moduleId, exerciseType, caseId);
@@ -544,7 +545,12 @@ function renderLevelMode(
       nextBtn.style.display = 'block';
     };
 
-    destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete);
+    // Free mode: use renderFreeMode for step-by-step exercises
+    if (caseMode === 'free' && exercise.type === 'step-by-step') {
+      destroyExercise = renderFreeMode(exerciseContainer, exercise, onComplete);
+    } else {
+      destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete);
+    }
   }
 
   renderNextCase();
