@@ -9,8 +9,18 @@ export function renderTrueFalse(
   exercise: TrueFalseExercise,
   onComplete: () => void,
 ): (() => void) | null {
+  const graphWrap = document.createElement('div');
+  graphWrap.className = 'mb-4';
+
+  // Label: was zeigt der Graph?
+  const graphLabel = document.createElement('p');
+  graphLabel.style.cssText = 'font-size: 0.75rem; color: var(--color-ink-muted); margin-bottom: 0.25rem;';
+  const fnLatex = exercise.function.latex;
+  graphLabel.textContent = fnLatex.startsWith("f'") ? "Graph von f\u2019" : fnLatex.startsWith("f''") ? "Graph von f\u2019\u2019" : 'Graph von f';
+  graphWrap.appendChild(graphLabel);
+
   const graphContainer = document.createElement('div');
-  graphContainer.className = 'mb-4';
+  graphWrap.appendChild(graphContainer);
 
   const board = createBoard(graphContainer, { boundingBox: calcBoundingBox([exercise.function.fn]) });
   const bbTF = board.getBoundingBox();
@@ -162,7 +172,7 @@ export function renderTrueFalse(
   falseBtn.addEventListener('click', () => handleTruthChoice(false));
 
   reasonDiv.prepend(reasonLabel);
-  container.append(graphContainer, statementEl, btnRow, reasonDiv, feedbackDiv);
+  container.append(graphWrap, statementEl, btnRow, reasonDiv, feedbackDiv);
 
   return () => {
     destroyBoard(board);
