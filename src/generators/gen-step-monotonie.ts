@@ -362,30 +362,43 @@ function genA3Guided(): StepByStepExercise {
   ];
   const chosen = pick(intervals);
 
-  const intervalLabel = `[${chosen.a};\\, ${chosen.b}]`;
+  const intervalLabel = `(${chosen.a};\\, ${chosen.b})`;
   const testVal = chosen.testX;
   const fPrimeAtTest = evalPoly(fPrimeCoeffs, testVal);
-  const signAtTest = fPrimeAtTest > 0 ? '> 0' : '< 0';
   const signWord = fPrimeAtTest > 0 ? 'positiv' : 'negativ';
   const monoResult = chosen.isSmw ? 'streng monoton wachsend (smw)' : 'streng monoton fallend (smf)';
 
   // MC for f'
   const correctFPrime = formatPolynomial(fPrimeCoeffs);
-  const distractors = generateFPrimeDistractors(fCoeffs, fPrimeCoeffs);
-  const fPrimeOptions = [correctFPrime, ...distractors];
-  const optionObjects = fPrimeOptions.map((opt, i) => ({ text: opt, idx: i }));
-  shuffle(optionObjects);
-  const shuffledOptions = optionObjects.map(o => o.text);
-  const correctFPrimeIndex = optionObjects.findIndex(o => o.idx === 0);
+  const fpDistr = generateFPrimeDistractors(fCoeffs, fPrimeCoeffs);
+  const fpOpts = [correctFPrime, ...fpDistr].map((t, i) => ({ t, i }));
+  shuffle(fpOpts);
+  const correctFPrimeIdx = fpOpts.findIndex(o => o.i === 0);
 
-  // MC for final monotonie answer
-  const correctMono = monoResult;
-  const wrongMono = chosen.isSmw ? 'streng monoton fallend (smf)' : 'streng monoton wachsend (smw)';
-  const monoMCOptions = [correctMono, wrongMono, 'weder smw noch smf', 'keine Aussage möglich'];
-  const monoMCObjs = monoMCOptions.map((opt, i) => ({ text: opt, idx: i }));
-  shuffle(monoMCObjs);
-  const shuffledMonoMC = monoMCObjs.map(o => o.text);
-  const correctMonoMCIndex = monoMCObjs.findIndex(o => o.idx === 0);
+  // MC for f'(testVal) — Testwert berechnen
+  const wrongVals = new Set<number>();
+  wrongVals.add(fPrimeAtTest + pick([2, 3, -2, -3]));
+  wrongVals.add(-fPrimeAtTest);
+  wrongVals.add(evalPoly(fCoeffs, testVal)); // f(testVal) statt f'(testVal) — typischer Fehler
+  wrongVals.delete(fPrimeAtTest);
+  const testDistractors = [...wrongVals].slice(0, 3);
+  while (testDistractors.length < 3) testDistractors.push(fPrimeAtTest + pick([1, -1, 4, -4]));
+  const testOpts = [fPrimeAtTest, ...testDistractors].map((v, i) => ({ v, i }));
+  shuffle(testOpts);
+  const correctTestIdx = testOpts.findIndex(o => o.i === 0);
+
+  // MC: Nullstellen im Intervall?
+  const nsQuestion = `Liegen die Nullstellen \\(x_1 = ${x1}\\) und \\(x_2 = ${x2}\\) von \\(f'\\) im Intervall \\(${intervalLabel}\\)?`;
+  const correctNsAnswer = 0; // "Nein" ist immer korrekt (offenes Intervall!)
+  const nsOpts = ['Nein — also hat f\u2019 im Intervall konstantes Vorzeichen', 'Ja — f\u2019 wechselt dort das Vorzeichen'];
+
+  // MC for final conclusion
+  const monoOpts = [
+    monoResult,
+    chosen.isSmw ? 'streng monoton fallend (smf)' : 'streng monoton wachsend (smw)',
+  ].map((t, i) => ({ t, i }));
+  shuffle(monoOpts);
+  const correctMonoIdx = monoOpts.findIndex(o => o.i === 0);
 
   return {
     id: uid(),
@@ -408,33 +421,34 @@ function genA3Guided(): StepByStepExercise {
       {
         instruction: `Bestimme \\(f'(x)\\).`,
         inputType: 'multiple-choice',
-        options: shuffledOptions.map(s => s),
-        correctAnswer: correctFPrimeIndex,
-        hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\u2032 = n\u00b7xⁿ⁻\u00b9.',
+        options: fpOpts.map(o => o.t),
+        correctAnswer: correctFPrimeIdx,
+        hint: 'Leite jeden Term einzeln ab: Potenzregel (x\u207F)\u2032 = n\u00B7x\u207F\u207B\u00B9.',
         explanation: `Die Ableitung ist \\(${fPrimeLatex}\\).`,
       },
       {
-        instruction: `Berechne \\(f'(${testVal})\\) als Testwert im Intervall \\(${intervalLabel}\\).`,
-        inputType: 'number',
-        correctAnswer: fPrimeAtTest,
+        instruction: `Setze \\(f'(x) = 0\\). Die Nullstellen sind \\(x_1 = ${x1}\\) und \\(x_2 = ${x2}\\). ${nsQuestion}`,
+        inputType: 'multiple-choice',
+        options: nsOpts,
+        correctAnswer: correctNsAnswer,
+        hint: `Prüfe: Liegt \\(${x1}\\) oder \\(${x2}\\) im offenen Intervall \\(${intervalLabel}\\)?`,
+        explanation: `Die Nullstellen \\(x_1 = ${x1}\\) und \\(x_2 = ${x2}\\) liegen nicht im Intervall \\(${intervalLabel}\\). Also hat \\(f'\\) dort keine Nullstelle und behält ein konstantes Vorzeichen.`,
+      },
+      {
+        instruction: `Berechne \\(f'(${testVal})\\) als Testwert.`,
+        inputType: 'multiple-choice',
+        options: testOpts.map(o => String(o.v)),
+        correctAnswer: correctTestIdx,
         hint: `Setze \\(x = ${testVal}\\) in \\(f'(x) = ${correctFPrime}\\) ein.`,
         explanation: `\\(f'(${testVal}) = ${fPrimeAtTest}\\).`,
       },
       {
-        instruction: `Ist \\(f'\\) auf \\(${intervalLabel}\\) positiv oder negativ?`,
-        inputType: 'sign-choice',
-        options: ['positiv (f\' > 0)', 'negativ (f\' < 0)'],
-        correctAnswer: fPrimeAtTest > 0 ? 0 : 1,
-        hint: `Du hast \\(f'(${testVal}) = ${fPrimeAtTest}\\) berechnet. Da \\(f'\\) im Intervall keine Nullstelle hat, bleibt das Vorzeichen gleich.`,
-        explanation: `\\(f'\\) ist auf \\(${intervalLabel}\\) ${signWord}, da \\(f'(${testVal}) = ${fPrimeAtTest} ${signAtTest}\\) und \\(f'\\) dort keine Nullstelle hat.`,
-      },
-      {
-        instruction: `Also ist \\(f\\) auf \\(${intervalLabel}\\)...?`,
+        instruction: `\\(f'(${testVal}) = ${fPrimeAtTest}\\) und \\(f'\\) hat keine Nullstelle im Intervall. Also ist f dort...`,
         inputType: 'multiple-choice',
-        options: shuffledMonoMC,
-        correctAnswer: correctMonoMCIndex,
-        hint: `\\(f' > 0 \\Rightarrow f\\) smw, \\(f' < 0 \\Rightarrow f\\) smf.`,
-        explanation: `Da \\(f' ${signAtTest}\\) auf \\(${intervalLabel}\\), ist \\(f\\) dort ${monoResult}.`,
+        options: monoOpts.map(o => o.t),
+        correctAnswer: correctMonoIdx,
+        hint: `\\(f'\\) ist im ganzen Intervall ${signWord}. \\(f' > 0 \\Rightarrow\\) smw, \\(f' < 0 \\Rightarrow\\) smf.`,
+        explanation: `\\(f'(${testVal}) = ${fPrimeAtTest}\\) ist ${signWord}. Da \\(f'\\) im Intervall keine Nullstelle hat, ist \\(f'\\) dort überall ${signWord} \\(\\Rightarrow\\) f ist ${monoResult}.`,
       },
     ],
     verificationGraph: {
