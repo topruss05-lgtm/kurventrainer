@@ -634,19 +634,20 @@ function buildMonotonieExtremstellenSection(
   const spText = document.createElement('p');
   spText.style.cssText = S.spCalloutText;
 
-  const emPremise = document.createElement('span');
-  emPremise.style.cssText = S.spCalloutEmphasis;
-  emPremise.textContent = "f\u2009\u2032(x\u2080)\u2009=\u20090, aber kein VZW";
+  const emDef = document.createElement('span');
+  emDef.style.cssText = S.spCalloutEmphasis;
+  emDef.textContent = "smf";
 
-  const emConclusion = document.createElement('span');
-  emConclusion.style.cssText = S.spCalloutEmphasis;
-  emConclusion.textContent = "streng monoton fallend";
+  const emKey = document.createElement('span');
+  emKey.style.cssText = S.spCalloutEmphasis;
+  emKey.textContent = "Funktionswerte werden trotzdem immer kleiner";
 
   spText.append(
-    emPremise,
-    " \u2192 f bleibt trotzdem ",
-    emConclusion,
-    ". Der Sattelpunkt unterbricht die Monotonie nicht.",
+    "Am Sattelpunkt ist f\u2009\u2032(x\u2080)\u2009=\u20090 \u2014 aber f ist weiterhin ",
+    emDef,
+    ". Warum? Weil streng monoton nur die Funktionswerte vergleicht: die ",
+    emKey,
+    ". Ein einzelner Punkt mit Steigung\u20090 \u00e4ndert daran nichts.",
   );
 
   spCallout.append(spIcon, spText);

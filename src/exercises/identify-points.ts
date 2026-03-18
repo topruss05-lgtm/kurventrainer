@@ -511,20 +511,30 @@ function renderClassifyIntervalExercise(
   rowsContainer.style.cssText = 'display: grid; gap: 0.625rem; margin-bottom: 1rem;';
 
   const selections: Array<{ type: 'smw' | 'smf' | null; from: number | string; to: number | string }> = [];
+  const lockedIndices = new Set<number>();
 
   function updateBands(): void {
     for (const el of bandElements) board.removeElement(el);
     bandElements.length = 0;
 
-    for (const sel of selections) {
-      if (!sel.type) continue;
+    selections.forEach((sel, idx) => {
       const xFrom = sel.from === '-\u221e' ? bb[0] : sel.from as number;
       const xTo = sel.to === '+\u221e' ? bb[2] : sel.to as number;
-      const color = sel.type === 'smw' ? SMW_COLOR : SMF_COLOR;
-      const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.15 });
-      board.addElement(band);
-      bandElements.push(band);
-    }
+
+      if (lockedIndices.has(idx)) {
+        // Gelockt (richtig): gleiche Farbe aber ausgeblendet wie UI-Rows
+        const color = sel.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+        const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.06 });
+        board.addElement(band);
+        bandElements.push(band);
+      } else if (sel.type) {
+        // Aktive Auswahl: normal farbig
+        const color = sel.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+        const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.15 });
+        board.addElement(band);
+        bandElements.push(band);
+      }
+    });
     board.update();
   }
 
@@ -675,30 +685,21 @@ function renderClassifyIntervalExercise(
       feedbackDiv.textContent = tipText;
 
       // Richtige ausgrauen (UI + Graph), falsche rot markieren
-      for (const el of bandElements) board.removeElement(el);
-      bandElements.length = 0;
-
       selections.forEach((sel, idx) => {
         const correctIv = correct[idx];
         const row = rowsContainer.children[idx] as HTMLElement;
-        const pair = intervalPairs[idx];
-        const xFrom = pair.from === '-\u221e' ? bb[0] : pair.from as number;
-        const xTo = pair.to === '+\u221e' ? bb[2] : pair.to as number;
 
         if (correctIv && sel.type === correctIv.type) {
-          // Richtig: UI ausgrauen
+          // Richtig: UI ausgrauen + im Graph als locked markieren
           row.style.opacity = '0.4';
           row.style.pointerEvents = 'none';
           row.style.borderColor = 'var(--color-success-border)';
-          // Graph: richtigen Bereich grau \u00fcberlagern (als "erledigt")
-          const grayBand = createIntervalBand(xFrom, xTo, { color: '#888', opacity: 0.15 });
-          board.addElement(grayBand);
-          bandElements.push(grayBand);
+          lockedIndices.add(idx);
         } else if (correctIv && sel.type !== correctIv.type) {
           row.style.borderColor = 'var(--color-error-border)';
         }
       });
-      board.update();
+      updateBands();
 
       setTimeout(() => {
         selections.forEach((sel, idx) => {
