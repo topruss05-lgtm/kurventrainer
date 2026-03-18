@@ -422,12 +422,7 @@ function renderLevelMode(
     }
   }
 
-  // Shuffle remaining for variety
-  for (let i = remaining.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
-  }
-
+  // Feste didaktische Reihenfolge: uncompleted Cases zuerst, dann completed
   const queue = [...remaining, ...done];
   let queueIndex = 0;
   let currentCase: CaseDefinition | null = null;

@@ -127,7 +127,7 @@ function genQuarticSattelpunkt(): IdentifyPointsExercise {
   // Actually: f(x) = x^4 + a*x^3, f'(x) = 4x^3 + 3ax^2 = x^2(4x + 3a)
   // Sattelpunkt at x=0 (Doppel-NS), Extremum at x = -3a/4
   // For integer extremum: a must be multiple of 4. Pick a from {-4, -8, 4, 8}
-  const a = pick([-4, 4, -8]);
+  const a = pick([-4, 4]); // |xE| = 3a/4 must be ≤ 4 to stay in visible range
   const xE = -3 * a / 4; // extremum x-value
   const fn = (x: number) => x ** 4 + a * x ** 3;
   const yE = fn(xE);

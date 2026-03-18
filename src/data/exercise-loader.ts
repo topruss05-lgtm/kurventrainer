@@ -1,4 +1,5 @@
 import type { Exercise, ModuleId, ExerciseType, CompetencyLevel } from '../types/exercise.js';
+import { getAllLevelConfigs } from '../generators/levels.js';
 import { monotoneExercises } from './exercises-monotonie.js';
 import { extremstellenExercises } from './exercises-extremstellen.js';
 import { wendestellenExercises } from './exercises-wendestellen.js';
@@ -50,6 +51,12 @@ export function getAvailableExerciseTypes(moduleId: ModuleId): ExerciseType[] {
   for (const e of ALL_EXERCISES) {
     if (e.module === moduleId) {
       types.add(e.type);
+    }
+  }
+  // Also include types from level configs (generator-based, no fixed data)
+  for (const lc of getAllLevelConfigs()) {
+    if (lc.moduleId === moduleId) {
+      types.add(lc.exerciseType);
     }
   }
   return [...types];
