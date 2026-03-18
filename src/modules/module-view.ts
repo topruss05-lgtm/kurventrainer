@@ -9,7 +9,7 @@ import type { ExerciseType, CompetencyLevel } from '../types/exercise.js';
 const TYPE_LABELS: Record<ExerciseType, string> = {
   'identify-points': 'Stellen identifizieren',
   'graph-assignment': 'Graph-Zuordnung',
-  'step-by-step': 'Schritt f\u00fcr Schritt',
+  'step-by-step': 'Rechenweg',
   'reverse-inference': 'R\u00fcckschluss-Trainer',
   'true-false': 'Aussagen bewerten',
   'graph-sketch': 'Graph-Skizze',
@@ -22,7 +22,7 @@ const TYPE_LABELS: Record<ExerciseType, string> = {
 const TYPE_DESCRIPTIONS: Record<ExerciseType, string> = {
   'identify-points': 'Finde bestimmte Stellen oder Intervalle im Graph',
   'graph-assignment': 'Ordne Graphen den passenden Funktionen zu',
-  'step-by-step': 'Berechne Schritt f\u00fcr Schritt: Ableitung, Nullstellen, Nachweis',
+  'step-by-step': 'Ableiten, Nullstellen bestimmen, Nachweis f\u00fchren',
   'reverse-inference': 'Schlie\u00dfe vom Ableitungsgraph auf Eigenschaften',
   'true-false': 'Beurteile Aussagen und w\u00e4hle die richtige Begr\u00fcndung',
   'graph-sketch': 'Finde den passenden Graph zu gegebenen Bedingungen',

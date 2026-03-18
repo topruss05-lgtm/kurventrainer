@@ -23,12 +23,12 @@ function uid(): string {
  * Format polynomial coeffs [a, b, c, d] for degrees 3, 2, 1, 0 as LaTeX.
  */
 function formatPolynomial(coeffs: number[]): string {
-  const degrees = [3, 2, 1, 0];
+  const maxDeg = coeffs.length - 1;
   const parts: string[] = [];
 
   for (let i = 0; i < coeffs.length; i++) {
     const c = coeffs[i];
-    const deg = degrees[i];
+    const deg = maxDeg - i;
     if (c === 0) continue;
 
     let term = '';
@@ -236,7 +236,7 @@ function genA2Guided(): StepByStepExercise {
       {
         instruction: `Gegeben ist \\(${fLatex}\\). Welches ist \\(f'(x)\\)?`,
         inputType: 'multiple-choice',
-        options: shuffledOptions.map(s => `\\(${s}\\)`),
+        options: shuffledOptions.map(s => s),
         correctAnswer: correctFPrimeIndex,
         hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\' = n·xⁿ⁻¹.',
         explanation: `Die Ableitung ist \\(${fPrimeLatex}\\).`,
@@ -275,7 +275,7 @@ function genA2Guided(): StepByStepExercise {
       {
         instruction: `In welchen Intervallen ist \\(f\\) streng monoton wachsend (smw) bzw. fallend (smf)?`,
         inputType: 'multiple-choice',
-        options: shuffledMono.map(s => `\\(${s}\\)`),
+        options: shuffledMono.map(s => s),
         correctAnswer: correctMonoIndex,
         hint: `Wo \\(f' > 0\\) ist, steigt \\(f\\) (smw). Wo \\(f' < 0\\), fällt \\(f\\) (smf).`,
         explanation: `Da \\(f' > 0\\) auf \\((-\\infty;\\, ${x1})\\) und \\((${x2};\\, +\\infty)\\), ist \\(f\\) dort smw. Auf \\((${x1};\\, ${x2})\\) ist \\(f' < 0\\), also \\(f\\) smf.`,
@@ -388,7 +388,7 @@ function genA3Guided(): StepByStepExercise {
       {
         instruction: `Gegeben ist \\(${fLatex}\\). Zeige, ob \\(f\\) auf \\(${intervalLabel}\\) monoton wachsend oder fallend ist. Welches ist \\(f'(x)\\)?`,
         inputType: 'multiple-choice',
-        options: shuffledOptions.map(s => `\\(${s}\\)`),
+        options: shuffledOptions.map(s => s),
         correctAnswer: correctFPrimeIndex,
         hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\' = n·xⁿ⁻¹.',
         explanation: `Die Ableitung ist \\(${fPrimeLatex}\\).`,

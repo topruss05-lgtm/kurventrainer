@@ -170,7 +170,7 @@ function buildMCOptions(correctLatex: string, distractors: string[]): { options:
   const tagged = all.map((text, i) => ({ text, orig: i }));
   shuffle(tagged);
   return {
-    options: tagged.map(o => `\\(${o.text}\\)`),
+    options: tagged.map(o => o.text),
     correctIndex: tagged.findIndex(o => o.orig === 0),
   };
 }

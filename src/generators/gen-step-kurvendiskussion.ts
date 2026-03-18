@@ -330,7 +330,7 @@ function genE3Guided(): StepByStepExercise {
     {
       instruction: `Bestimme \\(f'(x)\\).`,
       inputType: 'multiple-choice',
-      options: shuffledFP.map(s => `\\(${s}\\)`),
+      options: shuffledFP.map(s => s),
       correctAnswer: correctFPIndex,
       hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\' = n·xⁿ⁻¹.',
       explanation: `\\(${fPrimeLatex}\\).`,

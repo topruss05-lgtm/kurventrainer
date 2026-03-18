@@ -66,12 +66,6 @@ export function renderStepByStep(
   const header = document.createElement('div');
   header.className = 'mb-4';
 
-  const procedureLabel = document.createElement('p');
-  procedureLabel.className = 'text-sm font-medium mb-1';
-  procedureLabel.style.color = 'var(--color-ink-muted)';
-  procedureLabel.textContent = exercise.procedure;
-  header.appendChild(procedureLabel);
-
   const fnDisplay = document.createElement('h3');
   fnDisplay.className = 'text-xl font-semibold mb-3';
   fnDisplay.style.fontFamily = 'var(--font-display)';
