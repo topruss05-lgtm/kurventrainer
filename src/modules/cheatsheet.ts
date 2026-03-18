@@ -574,6 +574,8 @@ interface VoiceoverHooks {
   traceRange: [number, number];
   showTangentOnly: (mx: number) => void;
   showAtXNoLabel: (mx: number) => void;
+  /** Show specific labeled points by zone (for summary multi-point display) */
+  showPoints: (zones: ZoneId[]) => void;
 }
 
 interface SectionResult {
@@ -822,6 +824,17 @@ function buildMonotonieExtremstellenSection(
     boardF1.update();
   }
 
+  /** Show multiple labeled points simultaneously (for summary) */
+  function showPoints(zones: ZoneId[]): void {
+    for (const s of allSegs) { s.colored.visible = false; s.gray.visible = true; }
+    for (const b of allBands) b.el.visible = false;
+    for (const p of allPts) p.colored.visible = zones.includes(p.zone);
+    tangentLine.visible = false;
+    tangentDot.visible = false;
+    derivDot.visible = false;
+    updateBoards();
+  }
+
   function hideGraphics(): void {
     tangentLine.visible = false;
     tangentDot.visible = false;
@@ -946,7 +959,7 @@ function buildMonotonieExtremstellenSection(
   return {
     boards: [boardF, boardF1],
     ctrl,
-    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements, traceCurve, traceRange, showTangentOnly, showAtXNoLabel },
+    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements, traceCurve, traceRange, showTangentOnly, showAtXNoLabel, showPoints },
   };
 }
 
@@ -1440,20 +1453,15 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
     }},
-    // "VZW — Extremstelle" → show HP card state, then TP
+    // "VZW — Extremstelle" → HP + TP both visible
     { time: T.summaryVZW, action: () => {
-      h.hideGraphics();
-      monoCtrl.clearAll();
-      monoCtrl.onCardClick('hp');
+      h.showPoints(['hp', 'tp']);
+      highlightCardsMulti(monoCtrl.cards, ['hp', 'tp']);
     }},
-    { time: T.summaryVZW + 2.0, action: () => {
-      monoCtrl.onCardClick('hp'); // deselect
-      monoCtrl.onCardClick('tp');
-    }},
-    // "Kein VZW — Sattelpunkt" → show SP card state
+    // "Kein VZW — Sattelpunkt" → SP added
     { time: T.summarySP, action: () => {
-      monoCtrl.onCardClick('tp'); // deselect
-      monoCtrl.onCardClick('sp');
+      h.showPoints(['hp', 'tp', 'sp']);
+      highlightCardsMulti(monoCtrl.cards, ['hp', 'tp', 'sp']);
     }},
     // outro — reset
     { time: T.outro, action: () => {
