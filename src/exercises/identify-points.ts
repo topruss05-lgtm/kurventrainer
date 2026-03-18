@@ -549,6 +549,7 @@ function renderClassifyIntervalExercise(
       display: flex; align-items: center; gap: 0.5rem;
       padding: 0.5rem 0.75rem; border-radius: 0.75rem;
       border: 1px solid var(--color-border); background: var(--color-surface);
+      transition: opacity 0.4s ease, border-color 0.3s ease, transform 0.3s ease;
     `;
 
     // Interval label: (a, b)
@@ -632,34 +633,46 @@ function renderClassifyIntervalExercise(
       answered = true;
       recordResult(exercise.module, exercise.id, true);
 
-      // Alle Rows voll sichtbar + gesperrt
+      // ─── Choreographed success sequence ───
+
+      // Restore all rows with staggered timing
+      lockedIndices.clear();
       for (let i = 0; i < rowsContainer.children.length; i++) {
         const row = rowsContainer.children[i] as HTMLElement;
-        row.style.opacity = '1';
         row.style.pointerEvents = 'none';
-        row.style.borderColor = 'var(--color-success-border)';
         row.querySelectorAll('button').forEach(b => {
           (b as HTMLElement).style.cursor = 'default';
           (b as HTMLElement).style.pointerEvents = 'none';
         });
+        // Stagger the restore: each row fades back 80ms after the previous
+        setTimeout(() => {
+          row.style.opacity = '1';
+          row.style.borderColor = 'var(--color-success-border)';
+          row.classList.add('animate-success-pulse');
+        }, i * 80);
       }
 
-      // Alle B\u00e4nder kr\u00e4ftig anzeigen
-      lockedIndices.clear();
-      for (const el of bandElements) board.removeElement(el);
-      bandElements.length = 0;
-      for (const iv of correct) {
-        const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
-        const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
-        const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
-        const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
-        board.addElement(band);
-        bandElements.push(band);
-      }
-      board.update();
+      // Full-color bands after rows finish restoring
+      const bandDelay = rowsContainer.children.length * 80 + 100;
+      setTimeout(() => {
+        for (const el of bandElements) board.removeElement(el);
+        bandElements.length = 0;
+        for (const iv of correct) {
+          const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
+          const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
+          const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+          const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
+          board.addElement(band);
+          bandElements.push(band);
+        }
+        board.update();
+      }, bandDelay);
 
-      feedbackDiv.className = 'feedback-correct animate-fade-in';
-      feedbackDiv.textContent = 'Richtig! ' + exercise.feedbackExplanation;
+      // Feedback appears after the visual sequence
+      setTimeout(() => {
+        feedbackDiv.className = 'feedback-correct animate-fade-in';
+        feedbackDiv.textContent = 'Richtig! ' + exercise.feedbackExplanation;
+      }, bandDelay + 50);
       submitBtn.classList.add('hidden');
 
       if (exercise.strictFollowUp) {
@@ -690,44 +703,45 @@ function renderClassifyIntervalExercise(
           : 'Nicht ganz. Tipp: Geht die Kurve nach rechts oben \u2192 steigend. Nach rechts unten \u2192 fallend.';
       }
 
-      feedbackDiv.className = 'feedback-incorrect animate-fade-in';
-      feedbackDiv.textContent = tipText;
+      // ─── Choreographed wrong-answer sequence ───
 
-      // Richtige ausgrauen (UI + Graph), falsche rot markieren
+      // Beat 1 (0ms): Shake falsche Rows
       selections.forEach((sel, idx) => {
         const correctIv = correct[idx];
         const row = rowsContainer.children[idx] as HTMLElement;
-
-        if (correctIv && sel.type === correctIv.type) {
-          // Richtig: UI ausgrauen + im Graph als locked markieren
-          row.style.opacity = '0.4';
-          row.style.pointerEvents = 'none';
-          row.style.borderColor = 'var(--color-success-border)';
-          lockedIndices.add(idx);
-        } else if (correctIv && sel.type !== correctIv.type) {
-          row.style.borderColor = 'var(--color-error-border)';
+        if (correctIv && sel.type !== correctIv.type) {
+          row.classList.add('animate-gentle-shake');
         }
       });
-      updateBands();
 
+      // Beat 2 (450ms): Shake vorbei \u2192 falsche Buttons resetten + richtige ausblenden + Tipp
       setTimeout(() => {
         selections.forEach((sel, idx) => {
           const correctIv = correct[idx];
           const row = rowsContainer.children[idx] as HTMLElement;
           if (correctIv && sel.type !== correctIv.type) {
-            row.style.borderColor = 'var(--color-border)';
+            // Falsch: Shake entfernen, Auswahl resetten
+            row.classList.remove('animate-gentle-shake');
             sel.type = null;
-            const btns = row.querySelectorAll('button');
-            btns.forEach(b => {
+            row.querySelectorAll('button').forEach(b => {
               const el = b as HTMLElement;
               el.style.borderColor = 'transparent';
               el.style.backgroundColor = 'var(--color-surface-inset)';
               el.style.color = 'var(--color-ink-muted)';
             });
+          } else if (correctIv && sel.type === correctIv.type) {
+            // Richtig: sanft ausblenden
+            row.style.opacity = '0.4';
+            row.style.pointerEvents = 'none';
+            row.style.borderColor = 'var(--color-success-border)';
+            lockedIndices.add(idx);
           }
         });
         updateBands();
-      }, 1500);
+
+        feedbackDiv.className = 'feedback-incorrect animate-fade-in';
+        feedbackDiv.textContent = tipText;
+      }, 450);
     } else {
       // Zweiter Fehler: L\u00f6sung zeigen
       answered = true;
