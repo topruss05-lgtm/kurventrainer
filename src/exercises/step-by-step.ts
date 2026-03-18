@@ -2,7 +2,7 @@ import type { StepByStepExercise } from '../types/exercise.js';
 import { recordResult } from '../progress/storage.js';
 import { createBoard, destroyBoard, calcBoundingBox } from '../graph/board-factory.js';
 import { plotFunction, highlightPoint, COLORS } from '../graph/function-plotter.js';
-import { renderExerciseLatex, setMathOrText } from '../render-latex.js';
+import { renderExerciseLatex, setMathOrText, renderMixedContent } from '../render-latex.js';
 import { PROCEDURE_LABELS } from './procedure-labels.js';
 
 function validateNumber(input: string, correct: number, tolerance: number): boolean {
@@ -108,7 +108,7 @@ export function renderStepByStep(
 
     const instruction = document.createElement('p');
     instruction.className = 'font-medium mb-3';
-    instruction.textContent = step.instruction;
+    renderMixedContent(instruction, step.instruction);
     body.appendChild(instruction);
 
     const inputArea = document.createElement('div');

@@ -79,3 +79,22 @@ export function setMathOrText(el: HTMLElement, raw: string): void {
     el.textContent = raw;
   }
 }
+
+/**
+ * Render mixed text + inline LaTeX.
+ * Splits on \(...\) delimiters and renders LaTeX parts with KaTeX.
+ */
+export function renderMixedContent(el: HTMLElement, raw: string): void {
+  el.textContent = '';
+  const parts = raw.split(/(\\\(.*?\\\))/g);
+  for (const part of parts) {
+    if (part.startsWith('\\(') && part.endsWith('\\)')) {
+      const latex = part.slice(2, -2);
+      const span = document.createElement('span');
+      renderLatex(span, toLatex(latex));
+      el.appendChild(span);
+    } else if (part) {
+      el.appendChild(document.createTextNode(part));
+    }
+  }
+}
