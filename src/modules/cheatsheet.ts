@@ -26,20 +26,20 @@ const S = {
     box-shadow: 0 1px 2px rgba(26,26,46,0.04);
   `,
   nachweisHeader: `
-    padding: 0.75rem 1.125rem; border-bottom: 1px solid var(--color-border);
-    display: flex; align-items: baseline; gap: 0.5rem;
+    padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--color-border);
+    display: flex; align-items: baseline; gap: 0.625rem;
     background: var(--color-surface-inset);
   `,
-  nachweisTitle: `font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem; color: var(--color-ink);`,
-  nachweisSub: `font-size: 0.675rem; color: var(--color-ink-muted); letter-spacing: 0.02em;`,
+  nachweisTitle: `font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; color: var(--color-ink);`,
+  nachweisSub: `font-size: 0.8rem; color: var(--color-ink-muted); letter-spacing: 0.02em;`,
   nachweisCell: `
-    background: var(--color-surface-card); padding: 0.875rem 0.625rem;
-    display: flex; flex-direction: column; align-items: center; gap: 0.375rem;
+    background: var(--color-surface-card); padding: 1.125rem 0.875rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
   `,
-  nachweisPremise: `font-size: 0.7rem; color: var(--color-ink-secondary); text-align: center; line-height: 1.5; white-space: pre-line;`,
-  nachweisDivider: `width: 2rem; height: 1px; background: var(--color-border);`,
-  nachweisConclusion: `font-family: var(--font-display); font-weight: 700; font-size: 0.8rem;`,
-  nachweisHint: `font-size: 0.625rem; color: var(--color-ink-muted); font-style: italic; margin-top: 0.25rem;`,
+  nachweisPremise: `font-size: 0.9rem; color: var(--color-ink-secondary); text-align: center; line-height: 1.6; white-space: pre-line;`,
+  nachweisDivider: `width: 2.5rem; height: 1.5px; background: var(--color-border); border-radius: 1px;`,
+  nachweisConclusion: `font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;`,
+  nachweisHint: `font-size: 0.8rem; color: var(--color-ink-muted); font-style: italic; margin-top: 0.25rem;`,
   graphCard: `
     background: var(--color-surface-card); border-radius: 1rem;
     padding: 1rem 0.75rem 0.875rem;
@@ -125,11 +125,12 @@ interface CriticalPoint { x: number; zone: ZoneId }
 
 // ── Shared helpers ──────────────────────────────────────────────────
 
-function addLabel(container: HTMLElement, text: string, _color: string): void {
+function addLabel(container: HTMLElement, text: string, _color: string): HTMLElement {
   const lbl = document.createElement('p');
   lbl.style.cssText = S.label;
   lbl.textContent = text;
   container.appendChild(lbl);
+  return lbl;
 }
 
 function withCleanup(board: CanvasBoard, cleanups: (() => void)[]): void {
@@ -246,19 +247,24 @@ function buildNachweisBox(
   columns: HTMLElement[],
   zones: ZoneId[],
   onCellClick: (zone: ZoneId) => void,
+  headerExtra?: HTMLElement,
 ): void {
   const qt = document.createElement('div');
   qt.style.cssText = S.nachweisBox;
 
   const qtHeader = document.createElement('div');
-  qtHeader.style.cssText = S.nachweisHeader;
+  qtHeader.style.cssText = S.nachweisHeader + (headerExtra ? ' justify-content: space-between;' : '');
+  const qtHeaderLeft = document.createElement('div');
+  qtHeaderLeft.style.cssText = 'display: flex; align-items: baseline; gap: 0.625rem;';
   const qtTitle = document.createElement('h3');
   qtTitle.style.cssText = S.nachweisTitle;
   qtTitle.textContent = title;
   const qtSub = document.createElement('span');
   qtSub.style.cssText = S.nachweisSub;
   qtSub.textContent = 'Hinreichende Bedingung';
-  qtHeader.append(qtTitle, qtSub);
+  qtHeaderLeft.append(qtTitle, qtSub);
+  qtHeader.appendChild(qtHeaderLeft);
+  if (headerExtra) qtHeader.appendChild(headerExtra);
 
   const qtBody = document.createElement('div');
   qtBody.style.cssText = `display: grid; grid-template-columns: repeat(${colCount}, 1fr); gap: 1px; background: var(--color-border);`;
@@ -546,9 +552,24 @@ const WZONE_COLORS: Record<string, string> = {
 
 // ── Monotonie + Extremstellen section ───────────────────────────────
 
+interface VoiceoverHooks {
+  showAtX: (mx: number) => void;
+  hideGraphics: () => void;
+  setGraphState: (mode: 'blank' | 'zone' | 'segment' | 'point', zone?: ZoneId, segIndex?: number) => void;
+  getSegIndex: (mx: number) => number | null;
+  showSpCallout: () => void;
+  hideSpCallout: (immediate?: boolean) => void;
+  boardF: CanvasBoard;
+  boardF1: CanvasBoard;
+  fLabel: HTMLElement;
+  f1Label: HTMLElement;
+  nachweisPlayBtn: HTMLElement;
+}
+
 interface SectionResult {
   boards: CanvasBoard[];
   ctrl?: SectionCtrl;
+  hooks?: VoiceoverHooks;
 }
 
 function buildMonotonieExtremstellenSection(
@@ -574,7 +595,7 @@ function buildMonotonieExtremstellenSection(
   const COLOR_F1 = '#1a6b6b';
 
   // ─ Board f ─
-  addLabel(graphContainer, 'Graph von f  \u2014  Bewege die Maus oder klicke rechts auf eine Regel', COLOR_F);
+  const fLabel = addLabel(graphContainer, 'Graph von f  \u2014  Bewege die Maus oder klicke rechts auf eine Regel', COLOR_F);
   const boardF = createBoard(graphContainer, {
     boundingBox: [-3.5, 2.5, 3.5, -2.5],
     keepAspectRatio: true,
@@ -605,7 +626,7 @@ function buildMonotonieExtremstellenSection(
   boardF.update();
 
   // ─ Board f' ─
-  addLabel(graphContainer, "Graph von f'", COLOR_F1);
+  const f1Label = addLabel(graphContainer, "Graph von f'", COLOR_F1);
   const boardF1 = createBoard(graphContainer, {
     boundingBox: [-3.5, 5, 3.5, -2.5],
     height: 150,
@@ -757,11 +778,12 @@ function buildMonotonieExtremstellenSection(
   rulesContainer.appendChild(makeRuleCard('Sattelpunkt (kein Extremum)', ["f'(x\u2080) = 0, aber kein VZW von f'"], 'sp', ctrl.cards, ctrl.onCardClick));
 
   // ─ Nachweis ─
+  const nachweisPlayBtn = document.createElement('button');
   buildNachweisBox(nachweisContainer, "Nachweis mit f''", 3, [
     { premise: "f'(x\u2080) = 0\nf''(x\u2080) < 0", conclusion: 'Hochpunkt', zone: 'hp' },
     { premise: "f'(x\u2080) = 0\nf''(x\u2080) > 0", conclusion: 'Tiefpunkt', zone: 'tp' },
     { premise: "f'(x\u2080) = 0\nf''(x\u2080) = 0", conclusion: 'Keine Aussage\n(z.\u202FB. Sattelpunkt)', zone: 'sp' },
-  ], ctrl.nachweisColumns, ctrl.nachweisZones, ctrl.onNachweisClick);
+  ], ctrl.nachweisColumns, ctrl.nachweisZones, ctrl.onNachweisClick, nachweisPlayBtn);
 
   // ─ Mouse hover ─
   const SNAP = 0.2;
@@ -851,7 +873,11 @@ function buildMonotonieExtremstellenSection(
   attachHover(boardF, cleanups, onMove, onLeave);
   withCleanup(boardF, cleanups);
 
-  return { boards: [boardF, boardF1], ctrl };
+  return {
+    boards: [boardF, boardF1],
+    ctrl,
+    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn },
+  };
 }
 
 // ── Wendestellen + Kruemmung section ────────────────────────────────
@@ -1103,6 +1129,7 @@ function buildSectionLayout(
     rulesDiv: HTMLElement,
     nachweisDiv: HTMLElement,
   ) => SectionResult,
+  headingExtra?: HTMLElement,
 ): SectionResult {
   const sectionEl = document.createElement('section');
   sectionEl.className = 'animate-slide-up';
@@ -1110,8 +1137,11 @@ function buildSectionLayout(
   if (animDelay) sectionEl.style.animationDelay = animDelay;
 
   const heading = document.createElement('h2');
-  heading.style.cssText = S.sectionHeading;
-  heading.textContent = title;
+  heading.style.cssText = S.sectionHeading + (headingExtra ? 'display:flex; align-items:center; justify-content:space-between;' : '');
+  const titleSpan = document.createElement('span');
+  titleSpan.textContent = title;
+  heading.appendChild(titleSpan);
+  if (headingExtra) heading.appendChild(headingExtra);
   sectionEl.appendChild(heading);
 
   const grid = document.createElement('div');
@@ -1170,8 +1200,25 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   header.append(h1, hint);
   container.append(backBtn, header);
 
+  // ─ Play button (created early so it can be placed in the section heading) ─
+  const playBtnStyle = `
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.9rem; border: 1.5px solid rgba(255,255,255,0.45);
+    border-radius: 999px; background: rgba(255,255,255,0.12);
+    color: #fff; font: 600 0.78rem/1 var(--font-body);
+    cursor: pointer; transition: all 0.2s ease;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    white-space: nowrap;
+  `;
+  const playBtnHoverStyle = 'background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.7);';
+  const playBtn = document.createElement('button');
+  playBtn.style.cssText = playBtnStyle;
+  playBtn.innerHTML = '<span style="font-size:0.9rem">&#9654;</span> Erkl\u00e4rung';
+  playBtn.addEventListener('mouseenter', () => { playBtn.style.cssText = playBtnStyle + playBtnHoverStyle; });
+  playBtn.addEventListener('mouseleave', () => { playBtn.style.cssText = playBtnStyle; });
+
   // ─ Section 1: Monotonie & Extremstellen ─
-  const sec1 = buildSectionLayout(container, 'Monotonie & Extremstellen', null, buildMonotonieExtremstellenSection);
+  const sec1 = buildSectionLayout(container, 'Monotonie & Extremstellen', null, buildMonotonieExtremstellenSection, playBtn);
   boards.push(...sec1.boards);
   const monoCtrl = sec1.ctrl!;
 
@@ -1185,87 +1232,247 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   boards.push(...sec2.boards);
 
   // ─ Voiceover player ─
-  const audio = new Audio('/audio/voiceover-monotonie.mp3');
-  const timeline: { time: number; action: () => void }[] = [
-    { time: 0.0,  action: () => monoCtrl.clearAll() },
-    { time: 6.3,  action: () => monoCtrl.onCardClick('steigend') },
-    { time: 19.2, action: () => monoCtrl.onCardClick('fallend') },
-    { time: 30.8, action: () => monoCtrl.onCardClick('hp') },
-    { time: 44.9, action: () => monoCtrl.onCardClick('tp') },
-    { time: 57.5, action: () => monoCtrl.onCardClick('sp') },
-    { time: 77.0, action: () => { monoCtrl.clearAll(); highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'hp'); } },
-    { time: 82.5, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'tp'); } },
-    { time: 86.0, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'sp'); } },
-    { time: 92.3, action: () => monoCtrl.clearAll() },
+  const h = sec1.hooks!;
+  const BASE = import.meta.env.BASE_URL;
+  const audio1 = new Audio(BASE + 'audio/voiceover-monotonie.mp3');
+  audio1.preload = 'auto';
+
+  // Animation: point travels from xFrom→xTo between tStart→tEnd (seconds)
+  // Each segment defines a motion or a hold (xFrom === xTo)
+  type Motion = { tStart: number; tEnd: number; xFrom: number; xTo: number };
+  const motions: Motion[] = [
+    // Phase 1: only f graph, tangent appears at x=-2.8
+    { tStart: 0.0, tEnd: 3.0, xFrom: -2.8, xTo: -2.8 },   // "Das ist der Graph..." (hold)
+    // Phase 2: tangent moves slowly while explaining slope = f'
+    { tStart: 3.0, tEnd: 16.4, xFrom: -2.8, xTo: -2.6 },  // tangent demo
+    // Phase 3: f' appears at ~16.4s, point at x=-2.6
+    { tStart: 16.4, tEnd: 27.2, xFrom: -2.6, xTo: -2.6 },  // "f' graph..." (hold)
+    // Phase 4: travel through steigend zone
+    { tStart: 27.2, tEnd: 43.7, xFrom: -2.8, xTo: -2.3 },  // "Hier links steigt f..." + smw
+    // Phase 5: approach HP — tangent gets flatter
+    { tStart: 43.7, tEnd: 49.9, xFrom: -2.3, xTo: -2.05 },  // "immer flacher..."
+    // Phase 6: arrive at HP, hold
+    { tStart: 49.9, tEnd: 58.2, xFrom: -2.0, xTo: -2.0 },  // "Hier. Tangente waagerecht. HP."
+    // Phase 7: pass HP, tangent flips — VZW
+    { tStart: 58.2, tEnd: 72.7, xFrom: -2.0, xTo: -1.3 },  // "kippt nach unten... VZW... HP zum HP"
+    // Phase 8: travel through fallend
+    { tStart: 72.7, tEnd: 82.1, xFrom: -1.3, xTo: -0.15 }, // "fällt f... smf... flacher..."
+    // Phase 9: arrive at SP, hold
+    { tStart: 82.1, tEnd: 92.7, xFrom: 0.0, xTo: 0.0 },    // "f' ist Null... sieht aus wie HP..."
+    // Phase 10: pass SP — no flip, keeps falling
+    { tStart: 92.7, tEnd: 104.0, xFrom: 0.0, xTo: 0.8 },   // "fällt weiter... kein Kippen... SP"
+    // Phase 11: travel to TP
+    { tStart: 104.0, tEnd: 115.7, xFrom: 0.8, xTo: 1.95 }, // "Weiter fällt f... bis hier"
+    // Phase 12: at TP, hold
+    { tStart: 115.7, tEnd: 120.2, xFrom: 2.0, xTo: 2.0 },  // "Tangente waagerecht. f' Null."
+    // Phase 13: pass TP — tangent flips up
+    { tStart: 120.2, tEnd: 131.0, xFrom: 2.0, xTo: 2.7 },  // "kippt nach oben... TP... smw"
+    // Phase 14: summary — hold at end
+    { tStart: 131.0, tEnd: 149.0, xFrom: 2.7, xTo: 2.7 },  // "Also merke dir..." + outro
   ];
 
-  let cueIndex = 0;
-  let rafId = 0;
-  function tick(): void {
-    const t = audio.currentTime;
-    while (cueIndex < timeline.length && t >= timeline[cueIndex].time) {
-      timeline[cueIndex].action();
-      cueIndex++;
+  // One-shot cues for discrete events (graph state, labels, cards)
+  const cues: { time: number; action: () => void }[] = [
+    // Phase 1: blank graph, hide f' board initially
+    { time: 0.0, action: () => {
+      monoCtrl.clearAll();
+      h.setGraphState('blank');
+      h.f1Label.style.display = 'none';
+      h.boardF1.canvas.style.display = 'none';
+    }},
+    // Phase 3: reveal f' graph
+    { time: 16.3, action: () => {
+      h.f1Label.style.display = '';
+      h.boardF1.canvas.style.display = '';
+      h.boardF1.update();
+    }},
+    // Phase 4: highlight steigend
+    { time: 27.2, action: () => {
+      h.setGraphState('zone', 'steigend');
+      monoCtrl.highlightZone('steigend');
+    }},
+    // Phase 5: back to blank for approach
+    { time: 43.7, action: () => {
+      h.setGraphState('blank');
+      monoCtrl.clearHighlights();
+    }},
+    // Phase 6: HP highlight
+    { time: 49.9, action: () => {
+      monoCtrl.highlightZone('hp');
+    }},
+    // Phase 7: after HP, show fallend
+    { time: 72.7, action: () => {
+      h.setGraphState('zone', 'fallend');
+      monoCtrl.highlightZone('fallend');
+    }},
+    // Phase 9: SP highlight
+    { time: 82.1, action: () => {
+      highlightCardsMulti(monoCtrl.cards, ['fallend', 'sp']);
+      h.showSpCallout();
+    }},
+    // Phase 10: after SP
+    { time: 104.0, action: () => {
+      h.hideSpCallout(true);
+      monoCtrl.highlightZone('fallend');
+    }},
+    // Phase 12: TP highlight
+    { time: 115.7, action: () => {
+      monoCtrl.highlightZone('tp');
+    }},
+    // Phase 13: steigend again
+    { time: 125.0, action: () => {
+      h.setGraphState('zone', 'steigend');
+      monoCtrl.highlightZone('steigend');
+    }},
+    // Summary: show all cards, VZW rule
+    { time: 131.0, action: () => {
+      h.hideGraphics();
+      h.setGraphState('blank');
+      monoCtrl.clearHighlights();
+    }},
+    // Outro: clear all
+    { time: 146.0, action: () => monoCtrl.clearAll() },
+  ];
+
+  function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+
+  let cueIdx1 = 0;
+  let rafId1 = 0;
+  function tick1(): void {
+    const t = audio1.currentTime;
+    // Fire cues
+    while (cueIdx1 < cues.length && t >= cues[cueIdx1].time) {
+      cues[cueIdx1].action();
+      cueIdx1++;
     }
-    if (!audio.paused) rafId = requestAnimationFrame(tick);
+    // Animate point position
+    for (let i = motions.length - 1; i >= 0; i--) {
+      const m = motions[i];
+      if (t >= m.tStart && t < m.tEnd) {
+        const progress = (t - m.tStart) / (m.tEnd - m.tStart);
+        const mx = lerp(m.xFrom, m.xTo, progress);
+        h.showAtX(mx);
+        break;
+      }
+    }
+    if (!audio1.paused) rafId1 = requestAnimationFrame(tick1);
   }
 
-  // Play button
-  const playBtn = document.createElement('button');
-  playBtn.style.cssText = `
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    padding: 0.5rem 1.1rem; border: 1.5px solid var(--color-border);
-    border-radius: 999px; background: var(--color-surface);
-    color: var(--color-ink); font: 600 0.85rem/1 var(--font-body);
-    cursor: pointer; transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  `;
-  playBtn.innerHTML = '<span style="font-size:1.1rem">&#9654;</span> Erkl\u00e4rung abspielen';
-  playBtn.addEventListener('mouseenter', () => {
-    playBtn.style.borderColor = 'var(--color-primary)';
-    playBtn.style.color = 'var(--color-primary)';
-  });
-  playBtn.addEventListener('mouseleave', () => {
-    if (audio.paused) {
-      playBtn.style.borderColor = 'var(--color-border)';
-      playBtn.style.color = 'var(--color-ink)';
-    }
-  });
-
-  function startPlayback(): void {
-    cueIndex = 0;
-    audio.currentTime = 0;
-    audio.play();
-    playBtn.innerHTML = '<span style="font-size:1.1rem">&#9724;</span> Stopp';
-    playBtn.style.borderColor = 'var(--color-primary)';
-    playBtn.style.color = 'var(--color-primary)';
-    rafId = requestAnimationFrame(tick);
+  function startPlayback1(): void {
+    cueIdx1 = 0;
+    audio1.currentTime = 0;
+    audio1.play().then(() => {
+      rafId1 = requestAnimationFrame(tick1);
+    }).catch((err) => {
+      console.error('Voiceover 1 playback failed:', err);
+      stopPlayback1();
+    });
+    playBtn.innerHTML = '<span style="font-size:0.9rem">&#9724;</span> Stopp';
+    playBtn.style.cssText = playBtnStyle + playBtnHoverStyle;
   }
-  function stopPlayback(): void {
-    audio.pause();
-    audio.currentTime = 0;
-    cancelAnimationFrame(rafId);
+  function stopPlayback1(): void {
+    audio1.pause();
+    audio1.currentTime = 0;
+    cancelAnimationFrame(rafId1);
     monoCtrl.clearAll();
-    playBtn.innerHTML = '<span style="font-size:1.1rem">&#9654;</span> Erkl\u00e4rung abspielen';
-    playBtn.style.borderColor = 'var(--color-border)';
-    playBtn.style.color = 'var(--color-ink)';
+    h.hideGraphics();
+    h.hideSpCallout(true);
+    // Restore f' visibility
+    h.f1Label.style.display = '';
+    h.boardF1.canvas.style.display = '';
+    h.boardF1.update();
+    playBtn.innerHTML = '<span style="font-size:0.9rem">&#9654;</span> Erkl\u00e4rung';
+    playBtn.style.cssText = playBtnStyle;
   }
 
   playBtn.addEventListener('click', () => {
-    audio.paused ? startPlayback() : stopPlayback();
+    audio1.paused ? startPlayback1() : stopPlayback1();
   });
-  audio.addEventListener('ended', stopPlayback);
+  audio1.addEventListener('ended', stopPlayback1);
 
-  // Stop voiceover when student manually interacts with cards/graph
+  // ─ Voiceover 2: Nachweis ─
+  const audio2 = new Audio(BASE + 'audio/voiceover-nachweis.mp3');
+  audio2.preload = 'auto';
+  const nBtn = h.nachweisPlayBtn;
+  const nBtnStyle = `
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.3rem 0.75rem; border: 1.5px solid var(--color-border);
+    border-radius: 999px; background: var(--color-surface);
+    color: var(--color-ink-secondary); font: 600 0.75rem/1 var(--font-body);
+    cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+  `;
+  const nBtnHover = 'border-color: var(--color-primary); color: var(--color-primary);';
+  nBtn.style.cssText = nBtnStyle;
+  nBtn.innerHTML = '<span style="font-size:0.8rem">&#9654;</span> Erkl\u00e4rung';
+  nBtn.addEventListener('mouseenter', () => { nBtn.style.cssText = nBtnStyle + nBtnHover; });
+  nBtn.addEventListener('mouseleave', () => { if (audio2.paused) nBtn.style.cssText = nBtnStyle; });
+
+  const cues2: { time: number; action: () => void }[] = [
+    // HP: f' fällt
+    { time: 0.0, action: () => { monoCtrl.clearAll(); monoCtrl.onCardClick('hp'); } },
+    // Nachweis HP highlight
+    { time: 20.9, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'hp'); } },
+    // TP: f' steigt
+    { time: 25.7, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); monoCtrl.onCardClick('tp'); } },
+    // Nachweis TP highlight
+    { time: 32.1, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'tp'); } },
+    // SP
+    { time: 36.9, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); monoCtrl.onCardClick('sp'); } },
+    // Nachweis SP highlight
+    { time: 44.5, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'sp'); } },
+    // End
+    { time: 50.0, action: () => monoCtrl.clearAll() },
+  ];
+
+  let cueIdx2 = 0;
+  let rafId2 = 0;
+  function tick2(): void {
+    const t = audio2.currentTime;
+    while (cueIdx2 < cues2.length && t >= cues2[cueIdx2].time) {
+      cues2[cueIdx2].action();
+      cueIdx2++;
+    }
+    if (!audio2.paused) rafId2 = requestAnimationFrame(tick2);
+  }
+
+  function startPlayback2(): void {
+    stopPlayback1();
+    cueIdx2 = 0;
+    audio2.currentTime = 0;
+    audio2.play().then(() => {
+      rafId2 = requestAnimationFrame(tick2);
+    }).catch((err) => {
+      console.error('Voiceover 2 playback failed:', err);
+      stopPlayback2();
+    });
+    nBtn.innerHTML = '<span style="font-size:0.8rem">&#9724;</span> Stopp';
+    nBtn.style.cssText = nBtnStyle + nBtnHover;
+  }
+  function stopPlayback2(): void {
+    audio2.pause();
+    audio2.currentTime = 0;
+    cancelAnimationFrame(rafId2);
+    monoCtrl.clearAll();
+    nBtn.innerHTML = '<span style="font-size:0.8rem">&#9654;</span> Erkl\u00e4rung';
+    nBtn.style.cssText = nBtnStyle;
+  }
+
+  nBtn.addEventListener('click', () => {
+    audio2.paused ? startPlayback2() : stopPlayback2();
+  });
+  audio2.addEventListener('ended', stopPlayback2);
+
+  // Stop any voiceover when student manually interacts
   container.addEventListener('pointerdown', (e) => {
-    if (audio.paused || playBtn.contains(e.target as Node)) return;
-    stopPlayback();
+    const isPlayBtn = playBtn.contains(e.target as Node) || nBtn.contains(e.target as Node);
+    if (isPlayBtn) return;
+    if (!audio1.paused) stopPlayback1();
+    if (!audio2.paused) stopPlayback2();
   });
-
-  hint.after(playBtn);
 
   return () => {
-    stopPlayback();
+    stopPlayback1();
+    stopPlayback2();
     boards.forEach(destroyBoard);
   };
 }

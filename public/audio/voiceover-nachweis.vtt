@@ -1,0 +1,48 @@
+1
+00:00:00,100 --> 00:00:03,466
+Schau nochmal auf f Strich am Hochpunkt.
+
+2
+00:00:03,416 --> 00:00:05,930
+Was macht f Strich hier?
+
+3
+00:00:05,930 --> 00:00:10,041
+Es fällt — von positiv durch Null ins Negative.
+
+4
+00:00:10,041 --> 00:00:17,125
+Wenn f Strich fällt, ist die Ableitung von f Strich negativ — also f zwei Strich kleiner Null.
+
+5
+00:00:17,125 --> 00:00:20,958
+Das allein reicht als Nachweis für einen Hochpunkt.
+
+6
+00:00:20,958 --> 00:00:25,736
+f Strich gleich Null, f zwei Strich kleiner Null — Hochpunkt.
+
+7
+00:00:25,736 --> 00:00:32,111
+Am Tiefpunkt ist es umgekehrt: f Strich steigt — also ist f zwei Strich größer Null.
+
+8
+00:00:32,111 --> 00:00:36,888
+F Strich gleich Null, f zwei Strich größer Null — Tiefpunkt.
+
+9
+00:00:36,888 --> 00:00:39,097
+Und am Sattelpunkt?
+
+10
+00:00:39,097 --> 00:00:44,486
+f Strich fällt weder eindeutig noch steigt es — f zwei Strich ist auch Null.
+
+11
+00:00:44,486 --> 00:00:46,972
+Keine Aussage möglich.
+
+12
+00:00:46,972 --> 00:00:50,750
+Dann musst du den Vorzeichenwechsel direkt prüfen.
+

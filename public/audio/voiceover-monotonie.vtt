@@ -1,80 +1,160 @@
 1
-00:00:00,100 --> 00:00:06,411
-Hier siehst du den Graphen einer Funktion f und darunter den Graphen ihrer Ableitung f Strich.
+00:00:00,100 --> 00:00:03,077
+Das ist der Graph einer Funktion f.
 
 2
-00:00:06,361 --> 00:00:12,958
-In den grünen Bereichen ist f streng monoton wachsend — die Funktionswerte werden immer größer.
+00:00:03,027 --> 00:00:10,541
+An jeder Stelle können wir eine Tangente anlegen — eine Gerade, die den Graphen genau an diesem Punkt berührt.
 
 3
-00:00:12,958 --> 00:00:19,250
-Schau auf f Strich: dort ist die Ableitung positiv, also oberhalb der x-Achse.
+00:00:10,541 --> 00:00:16,361
+Die Steigung dieser Tangente — genau das ist die Ableitung f Strich an dieser Stelle.
 
 4
-00:00:19,250 --> 00:00:26,000
-In den orangen Bereichen ist f streng monoton fallend — die Funktionswerte werden immer kleiner.
+00:00:16,361 --> 00:00:23,375
+Wenn wir diese Steigung für jede Stelle eintragen, entsteht ein neuer Graph — der Graph von f Strich.
 
 5
-00:00:26,000 --> 00:00:30,833
-Die Ableitung ist hier negativ, also unterhalb der x-Achse.
+00:00:23,375 --> 00:00:27,236
+Er zeigt dir: wie steil ist f gerade?
 
 6
-00:00:30,833 --> 00:00:35,027
-Am Hochpunkt wechselt die Funktion von steigend zu fallend.
+00:00:27,236 --> 00:00:29,527
+Hier links steigt f.
 
 7
-00:00:35,027 --> 00:00:40,000
-Die Tangente ist hier waagerecht, also ist f Strich gleich Null.
+00:00:29,527 --> 00:00:34,166
+Die Tangente zeigt nach oben, die Steigung ist positiv.
 
 8
-00:00:40,000 --> 00:00:44,902
-Und die Ableitung hat einen Vorzeichenwechsel von Plus nach Minus.
+00:00:34,166 --> 00:00:38,347
+Und unten siehst du: f Strich liegt über der x-Achse.
 
 9
-00:00:44,902 --> 00:00:51,069
-Am Tiefpunkt ist es genau umgekehrt: die Funktion wechselt von fallend zu steigend.
+00:00:38,347 --> 00:00:43,680
+Solange f Strich positiv ist, steigt f — streng monoton wachsend.
 
 10
-00:00:51,069 --> 00:00:57,569
-Wieder ist f Strich gleich Null — aber diesmal mit einem Vorzeichenwechsel von Minus nach Plus.
+00:00:43,680 --> 00:00:49,888
+Jetzt wird die Tangente immer flacher... die Steigung nimmt ab... f Strich nähert sich der Null...
 
 11
-00:00:57,569 --> 00:01:00,319
-Und dann gibt es den Sattelpunkt.
+00:00:49,888 --> 00:00:51,375
+Hier.
 
 12
-00:01:00,319 --> 00:01:04,791
-Auch hier ist f Strich gleich Null und die Tangente waagerecht.
+00:00:51,375 --> 00:00:53,722
+Tangente waagerecht.
 
 13
-00:01:04,791 --> 00:01:08,013
-Aber: kein Vorzeichenwechsel!
+00:00:53,722 --> 00:00:56,000
+f Strich gleich Null.
 
 14
-00:01:08,013 --> 00:01:13,972
-Die Ableitung bleibt negativ und die Funktion ist weiterhin streng monoton fallend.
+00:00:56,000 --> 00:00:58,180
+Das ist der Hochpunkt.
 
 15
-00:01:13,972 --> 00:01:17,055
-Der Sattelpunkt ist kein Extremum.
+00:00:58,180 --> 00:01:03,222
+Und jetzt passiert das Entscheidende: die Tangente kippt nach unten.
 
 16
-00:01:17,055 --> 00:01:22,541
-Um Extremstellen nachzuweisen, kannst du auch die zweite Ableitung nutzen.
+00:01:03,222 --> 00:01:09,222
+Die Steigung wechselt von positiv zu negativ — ein Vorzeichenwechsel von f Strich.
 
 17
-00:01:22,541 --> 00:01:28,430
-Ist f Strich gleich Null und f zwei Strich kleiner Null — dann hast du einen Hochpunkt.
+00:01:09,222 --> 00:01:12,666
+Genau das macht den Hochpunkt zum Hochpunkt.
 
 18
-00:01:28,430 --> 00:01:32,305
-Ist f zwei Strich größer Null — einen Tiefpunkt.
+00:01:12,666 --> 00:01:17,472
+Ab hier fällt f. f Strich ist negativ — streng monoton fallend.
 
 19
-00:01:32,305 --> 00:01:37,597
-Und wenn f zwei Strich auch Null ist, kann man keine Aussage treffen.
+00:01:17,472 --> 00:01:22,083
+Wieder wird die Tangente flacher... f Strich geht Richtung Null...
 
 20
-00:01:37,597 --> 00:01:44,125
-Probier es jetzt selbst aus — klick auf die Regeln rechts oder fahr mit der Maus über den Graphen.
+00:01:22,083 --> 00:01:24,222
+f Strich ist Null.
+
+21
+00:01:24,222 --> 00:01:26,569
+Tangente waagerecht.
+
+22
+00:01:26,569 --> 00:01:29,569
+Sieht aus wie eben beim Hochpunkt.
+
+23
+00:01:29,569 --> 00:01:32,708
+Aber schau, was jetzt passiert:
+
+24
+00:01:32,708 --> 00:01:35,805
+Die Funktion fällt einfach weiter.
+
+25
+00:01:35,805 --> 00:01:39,111
+Kein Kippen, kein Richtungswechsel.
+
+26
+00:01:39,111 --> 00:01:44,069
+f Strich war kurz Null, geht aber sofort wieder ins Negative.
+
+27
+00:01:44,069 --> 00:01:46,402
+Das ist ein Sattelpunkt.
+
+28
+00:01:46,402 --> 00:01:51,958
+f Strich ist Null, aber ohne Vorzeichenwechsel — also kein Extremum.
+
+29
+00:01:51,958 --> 00:01:54,097
+Weiter fällt f...
+
+30
+00:01:54,097 --> 00:01:55,722
+bis hier:
+
+31
+00:01:55,722 --> 00:01:58,069
+Tangente waagerecht.
+
+32
+00:01:58,069 --> 00:02:00,208
+f Strich ist Null.
+
+33
+00:02:00,208 --> 00:02:03,555
+Und diesmal kippt die Tangente nach oben.
+
+34
+00:02:03,555 --> 00:02:08,736
+Vorzeichenwechsel von Minus nach Plus — die Funktion steigt wieder.
+
+35
+00:02:08,736 --> 00:02:10,944
+Das ist der Tiefpunkt.
+
+36
+00:02:10,944 --> 00:02:14,680
+Und ab hier: wieder streng monoton wachsend.
+
+37
+00:02:14,680 --> 00:02:20,069
+Also merke dir: Vorzeichenwechsel von f Strich — Extremstelle.
+
+38
+00:02:20,069 --> 00:02:23,361
+Kein Vorzeichenwechsel — Sattelpunkt.
+
+39
+00:02:23,361 --> 00:02:25,958
+Das ist der ganze Unterschied.
+
+40
+00:02:25,958 --> 00:02:28,763
+Probier es jetzt selbst aus.
 
