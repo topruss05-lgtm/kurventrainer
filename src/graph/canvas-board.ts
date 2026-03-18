@@ -5,6 +5,7 @@ export interface BoardOptions {
   height?: number; // CSS px, default 350
   keepAspectRatio?: boolean; // if true, adjust bbox so 1 unit x = 1 unit y
   targetTicks?: number; // target number of ticks per axis, default 8
+  fixedTickStep?: number; // if set, use this exact step for both axes
 }
 
 export interface BoardElement {
@@ -54,6 +55,7 @@ export class CanvasBoard {
   private resizeObserver: ResizeObserver | null = null;
   private keepAspectRatio: boolean = false;
   private targetTicks: number = 8;
+  private fixedTickStep: number = 0;
 
   constructor(container: HTMLElement, options: BoardOptions = {}) {
     const defaults: Required<BoardOptions> = {
@@ -63,12 +65,14 @@ export class CanvasBoard {
       height: 350,
       keepAspectRatio: false,
       targetTicks: 8,
+      fixedTickStep: 0,
     };
     const opts = { ...defaults, ...options };
     this.bbox = [...opts.boundingBox];
     this.originalBbox = [...opts.boundingBox];
     this.keepAspectRatio = opts.keepAspectRatio;
     this.targetTicks = opts.targetTicks;
+    this.fixedTickStep = opts.fixedTickStep;
     this.container = container;
     this.dpr = window.devicePixelRatio || 1;
     this.cssH = opts.height;
@@ -207,8 +211,8 @@ export class CanvasBoard {
   }
 
   private drawGrid(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const xStep = niceStep(this.xRange, this.targetTicks);
-    const yStep = niceStep(this.yRange, this.targetTicks);
+    const xStep = this.fixedTickStep || niceStep(this.xRange, this.targetTicks);
+    const yStep = this.fixedTickStep || niceStep(this.yRange, this.targetTicks);
 
     ctx.strokeStyle = GRID_COLOR;
     ctx.lineWidth = 0.5;
@@ -234,8 +238,8 @@ export class CanvasBoard {
   }
 
   private drawAxes(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const xStep = niceStep(this.xRange, this.targetTicks);
-    const yStep = niceStep(this.yRange, this.targetTicks);
+    const xStep = this.fixedTickStep || niceStep(this.xRange, this.targetTicks);
+    const yStep = this.fixedTickStep || niceStep(this.yRange, this.targetTicks);
     const axisX = this.toScreenX(0);
     const axisY = this.toScreenY(0);
 

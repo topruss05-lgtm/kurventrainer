@@ -564,6 +564,10 @@ interface VoiceoverHooks {
   fLabel: HTMLElement;
   f1Label: HTMLElement;
   nachweisPlayBtn: HTMLElement;
+  /** Construction points on f'-board, initially hidden */
+  constructionPts: ReturnType<typeof createPoint>[];
+  /** All f' curve/band/point elements — to show/hide f' curve */
+  f1Elements: { visible: boolean }[];
 }
 
 interface SectionResult {
@@ -600,7 +604,7 @@ function buildMonotonieExtremstellenSection(
     boundingBox: [-3.5, 2.5, 3.5, -2.5],
     keepAspectRatio: true,
     height: 250,
-    targetTicks: 6,
+    fixedTickStep: 1,
   });
 
   const segRanges: Array<{ xRange: [number, number]; zone: ZoneId }> = [
@@ -647,6 +651,31 @@ function buildMonotonieExtremstellenSection(
     { x: 0, y: 0, label: "f'\u2009=\u20090, kein VZW", zone: 'sp' },
     { x: 2, y: 0, label: "f'\u2009=\u20090, VZW \u2212\u2192+", zone: 'tp', labelOffset: [-10, -12] },
   ]);
+  // Construction points for voiceover animation (slope values plotted on f'-board)
+  const SQRT2 = Math.sqrt(2);
+  const constructionData: { x: number; slope: number; label: string }[] = [
+    { x: -2.47, slope: 3, label: 'm = 3' },
+    { x: -2, slope: 0, label: 'm = 0' },
+    { x: -SQRT2, slope: f1(-SQRT2), label: 'm \u2248 \u22121' },
+    { x: 0, slope: 0, label: 'm = 0' },
+    { x: SQRT2, slope: f1(SQRT2), label: 'm \u2248 \u22121' },
+    { x: 2, slope: 0, label: 'm = 0' },
+    { x: 2.47, slope: 3, label: 'm = 3' },
+  ];
+  const constructionPts = constructionData.map(d => {
+    const pt = createPoint(d.x, d.slope, { color: '#e07a3a', size: 7, label: d.label, labelOffset: [6, -8] });
+    pt.visible = false;
+    boardF1.addElement(pt);
+    return pt;
+  });
+
+  // Collect all f'-board visual elements (curve segments + bands + labeled points)
+  const f1Elements: { visible: boolean }[] = [
+    ...segsF1.flatMap(s => [s.colored, s.gray]),
+    ...bandsF1.map(b => b.el),
+    ...ptsF1.map(p => p.colored),
+  ];
+
   boardF1.update();
 
   // ─ SP Callout (streng monoton Hinweis) ─
@@ -876,7 +905,7 @@ function buildMonotonieExtremstellenSection(
   return {
     boards: [boardF, boardF1],
     ctrl,
-    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn },
+    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements },
   };
 }
 
@@ -1237,125 +1266,161 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   const audio1 = new Audio(BASE + 'audio/voiceover-monotonie.mp3');
   audio1.preload = 'auto';
 
-  // Animation: point travels from xFrom→xTo between tStart→tEnd (seconds)
-  // Each segment defines a motion or a hold (xFrom === xTo)
-  type Motion = { tStart: number; tEnd: number; xFrom: number; xTo: number };
-  const motions: Motion[] = [
-    // Phase 1: only f graph, tangent appears at x=-2.8
-    { tStart: 0.0, tEnd: 3.0, xFrom: -2.8, xTo: -2.8 },   // "Das ist der Graph..." (hold)
-    // Phase 2: tangent moves slowly while explaining slope = f'
-    { tStart: 3.0, tEnd: 16.4, xFrom: -2.8, xTo: -2.6 },  // tangent demo
-    // Phase 3: f' appears at ~16.4s, point at x=-2.6
-    { tStart: 16.4, tEnd: 27.2, xFrom: -2.6, xTo: -2.6 },  // "f' graph..." (hold)
-    // Phase 4: travel through steigend zone
-    { tStart: 27.2, tEnd: 43.7, xFrom: -2.8, xTo: -2.3 },  // "Hier links steigt f..." + smw
-    // Phase 5: approach HP — tangent gets flatter
-    { tStart: 43.7, tEnd: 49.9, xFrom: -2.3, xTo: -2.05 },  // "immer flacher..."
-    // Phase 6: arrive at HP, hold
-    { tStart: 49.9, tEnd: 58.2, xFrom: -2.0, xTo: -2.0 },  // "Hier. Tangente waagerecht. HP."
-    // Phase 7: pass HP, tangent flips — VZW
-    { tStart: 58.2, tEnd: 72.7, xFrom: -2.0, xTo: -1.3 },  // "kippt nach unten... VZW... HP zum HP"
-    // Phase 8: travel through fallend
-    { tStart: 72.7, tEnd: 82.1, xFrom: -1.3, xTo: -0.15 }, // "fällt f... smf... flacher..."
-    // Phase 9: arrive at SP, hold
-    { tStart: 82.1, tEnd: 92.7, xFrom: 0.0, xTo: 0.0 },    // "f' ist Null... sieht aus wie HP..."
-    // Phase 10: pass SP — no flip, keeps falling
-    { tStart: 92.7, tEnd: 104.0, xFrom: 0.0, xTo: 0.8 },   // "fällt weiter... kein Kippen... SP"
-    // Phase 11: travel to TP
-    { tStart: 104.0, tEnd: 115.7, xFrom: 0.8, xTo: 1.95 }, // "Weiter fällt f... bis hier"
-    // Phase 12: at TP, hold
-    { tStart: 115.7, tEnd: 120.2, xFrom: 2.0, xTo: 2.0 },  // "Tangente waagerecht. f' Null."
-    // Phase 13: pass TP — tangent flips up
-    { tStart: 120.2, tEnd: 131.0, xFrom: 2.0, xTo: 2.7 },  // "kippt nach oben... TP... smw"
-    // Phase 14: summary — hold at end
-    { tStart: 131.0, tEnd: 149.0, xFrom: 2.7, xTo: 2.7 },  // "Also merke dir..." + outro
-  ];
+  // ── Voiceover 1: Construction animation ──
+  // Timeline based on VTT timestamps:
+  //  0.0  "Das ist der Graph einer Funktion f."
+  //  3.0  "An jeder Stelle hat der Graph eine bestimmte Steigung."
+  //  7.1  "Die können wir mit einer Tangente sichtbar machen."
+  // 10.7  "Hier links ist die Steigung drei" → tangent at x=-2.47, plot pt[0]
+  // 15.2  "Am Hochpunkt wird es flach — Steigung Null" → tangent at x=-2, plot pt[1]
+  // 18.9  "Danach fällt der Graph."
+  // 21.3  "An der steilsten Stelle — Steigung ≈ -1" → tangent at x=-√2, plot pt[2]
+  // 25.7  "Am Sattelpunkt — Steigung wieder Null" → tangent at x=0, plot pt[3]
+  // 31.5  "Nochmal die steilste Stelle — Steigung -1" → tangent at x=√2, plot pt[4]
+  // 36.1  "Am Tiefpunkt: Steigung Null" → tangent at x=2, plot pt[5]
+  // 39.0  "Rechts steigt der Graph — Steigung drei" → tangent at x=2.47, plot pt[6]
+  // 43.1  "Jetzt tragen wir diese Steigungswerte als Punkte ein" → (pts already plotted)
+  // 49.4  "Daraus entsteht ein neuer Graph — f Strich" → reveal f' curve
+  // 54.2  "Er zeigt für jede Stelle, wie steil f gerade ist."
+  // 58.5  "Schau wo f' die x-Achse kreuzt — Steigung Null" → highlight zeros
+  // 65.2  "Das sind HP, TP und SP"
+  // 68.6  "Wo f' oberhalb liegt — smw" → highlight steigend
+  // 74.4  "Wo f' unterhalb — smf" → highlight fallend
+  // 79.4  "Der entscheidende Unterschied: VZW am HP" → highlight HP
+  // 87.3  "Am SP kein VZW — kein Extremum" → highlight SP
+  // 93.9  "Probier es jetzt selbst aus"
 
-  // One-shot cues for discrete events (graph state, labels, cards)
+  const constructionX = [-2.47, -2, -Math.sqrt(2), 0, Math.sqrt(2), 2, 2.47];
+
   const cues: { time: number; action: () => void }[] = [
-    // Phase 1: blank graph, hide f' board initially
+    // Init: hide f' completely, hide all construction pts, blank graph
     { time: 0.0, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
+      h.hideGraphics();
       h.f1Label.style.display = 'none';
       h.boardF1.canvas.style.display = 'none';
+      for (const el of h.f1Elements) el.visible = false;
+      for (const pt of h.constructionPts) pt.visible = false;
     }},
-    // Phase 3: reveal f' graph
-    { time: 16.3, action: () => {
+    // Show f'-board (empty, just axes) for plotting points
+    { time: 7.1, action: () => {
       h.f1Label.style.display = '';
       h.boardF1.canvas.style.display = '';
       h.boardF1.update();
     }},
-    // Phase 4: highlight steigend
-    { time: 27.2, action: () => {
+    // pt 0: x=-2.47, m=3
+    { time: 10.7, action: () => {
+      h.showAtX(constructionX[0]);
+      h.constructionPts[0].visible = true;
+      h.boardF1.update();
+    }},
+    // pt 1: x=-2, m=0 (HP)
+    { time: 15.2, action: () => {
+      h.showAtX(constructionX[1]);
+      h.constructionPts[1].visible = true;
+      h.boardF1.update();
+    }},
+    // pt 2: x=-√2, m≈-1
+    { time: 21.3, action: () => {
+      h.showAtX(constructionX[2]);
+      h.constructionPts[2].visible = true;
+      h.boardF1.update();
+    }},
+    // pt 3: x=0, m=0 (SP)
+    { time: 25.7, action: () => {
+      h.showAtX(constructionX[3]);
+      h.constructionPts[3].visible = true;
+      h.boardF1.update();
+    }},
+    // pt 4: x=√2, m≈-1
+    { time: 31.5, action: () => {
+      h.showAtX(constructionX[4]);
+      h.constructionPts[4].visible = true;
+      h.boardF1.update();
+    }},
+    // pt 5: x=2, m=0 (TP)
+    { time: 36.1, action: () => {
+      h.showAtX(constructionX[5]);
+      h.constructionPts[5].visible = true;
+      h.boardF1.update();
+    }},
+    // pt 6: x=2.47, m=3
+    { time: 39.0, action: () => {
+      h.showAtX(constructionX[6]);
+      h.constructionPts[6].visible = true;
+      h.boardF1.update();
+    }},
+    // "Jetzt tragen wir..." — hide tangent, let points sit
+    { time: 43.1, action: () => {
+      h.hideGraphics();
+    }},
+    // "Daraus entsteht f'" — reveal the f' curve through the points
+    { time: 49.4, action: () => {
+      for (const el of h.f1Elements) el.visible = true;
+      h.setGraphState('blank');
+      h.boardF.update();
+      h.boardF1.update();
+    }},
+    // "Wo f' oberhalb liegt — smw"
+    { time: 68.6, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
     }},
-    // Phase 5: back to blank for approach
-    { time: 43.7, action: () => {
-      h.setGraphState('blank');
-      monoCtrl.clearHighlights();
-    }},
-    // Phase 6: HP highlight
-    { time: 49.9, action: () => {
-      monoCtrl.highlightZone('hp');
-    }},
-    // Phase 7: after HP, show fallend
-    { time: 72.7, action: () => {
+    // "Wo f' unterhalb — smf"
+    { time: 74.4, action: () => {
       h.setGraphState('zone', 'fallend');
       monoCtrl.highlightZone('fallend');
     }},
-    // Phase 9: SP highlight
-    { time: 82.1, action: () => {
+    // "VZW am HP"
+    { time: 79.4, action: () => {
+      monoCtrl.highlightZone('hp');
+      h.setGraphState('point', 'hp');
+      h.showAtX(-2);
+    }},
+    // "Am SP kein VZW"
+    { time: 87.3, action: () => {
       highlightCardsMulti(monoCtrl.cards, ['fallend', 'sp']);
+      h.setGraphState('segment', undefined, 1);
+      h.showAtX(0);
       h.showSpCallout();
     }},
-    // Phase 10: after SP
-    { time: 104.0, action: () => {
-      h.hideSpCallout(true);
-      monoCtrl.highlightZone('fallend');
-    }},
-    // Phase 12: TP highlight
-    { time: 115.7, action: () => {
-      monoCtrl.highlightZone('tp');
-    }},
-    // Phase 13: steigend again
-    { time: 125.0, action: () => {
-      h.setGraphState('zone', 'steigend');
-      monoCtrl.highlightZone('steigend');
-    }},
-    // Summary: show all cards, VZW rule
-    { time: 131.0, action: () => {
+    // Outro: reset
+    { time: 93.9, action: () => {
       h.hideGraphics();
+      h.hideSpCallout(true);
+      monoCtrl.clearAll();
       h.setGraphState('blank');
-      monoCtrl.clearHighlights();
+      // Hide construction pts, show f' curve normally
+      for (const pt of h.constructionPts) pt.visible = false;
+      h.boardF.update();
+      h.boardF1.update();
     }},
-    // Outro: clear all
-    { time: 146.0, action: () => monoCtrl.clearAll() },
   ];
-
-  function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
 
   let cueIdx1 = 0;
   let rafId1 = 0;
   function tick1(): void {
     const t = audio1.currentTime;
-    // Fire cues
     while (cueIdx1 < cues.length && t >= cues[cueIdx1].time) {
       cues[cueIdx1].action();
       cueIdx1++;
     }
-    // Animate point position
-    for (let i = motions.length - 1; i >= 0; i--) {
-      const m = motions[i];
-      if (t >= m.tStart && t < m.tEnd) {
-        const progress = (t - m.tStart) / (m.tEnd - m.tStart);
-        const mx = lerp(m.xFrom, m.xTo, progress);
-        h.showAtX(mx);
-        break;
-      }
-    }
     if (!audio1.paused) rafId1 = requestAnimationFrame(tick1);
+  }
+
+  function resetVoiceover1(): void {
+    // Restore everything to normal interactive state
+    for (const pt of h.constructionPts) pt.visible = false;
+    for (const el of h.f1Elements) el.visible = true;
+    h.f1Label.style.display = '';
+    h.boardF1.canvas.style.display = '';
+    h.hideGraphics();
+    h.hideSpCallout(true);
+    monoCtrl.clearAll();
+    h.setGraphState('blank');
+    h.boardF.update();
+    h.boardF1.update();
   }
 
   function startPlayback1(): void {
@@ -1374,13 +1439,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     audio1.pause();
     audio1.currentTime = 0;
     cancelAnimationFrame(rafId1);
-    monoCtrl.clearAll();
-    h.hideGraphics();
-    h.hideSpCallout(true);
-    // Restore f' visibility
-    h.f1Label.style.display = '';
-    h.boardF1.canvas.style.display = '';
-    h.boardF1.update();
+    resetVoiceover1();
     playBtn.innerHTML = '<span style="font-size:0.9rem">&#9654;</span> Erkl\u00e4rung';
     playBtn.style.cssText = playBtnStyle;
   }
