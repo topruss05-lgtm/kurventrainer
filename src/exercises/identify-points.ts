@@ -649,24 +649,42 @@ function renderClassifyIntervalExercise(
       }
       onComplete();
     } else if (attempts === 1) {
-      // Erster Fehler: Tipp geben, nochmal probieren lassen
-      feedbackDiv.className = 'feedback-incorrect animate-fade-in';
-      feedbackDiv.textContent = exercise.prompt.includes('f\u2019')
-          ? 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).'
-          : 'Nicht ganz. Tipp: Schau ob die Kurve nach rechts oben geht (steigend) oder nach rechts unten (fallend).';
+      // Erster Fehler: spezifischer Tipp für die falschen Intervalle
+      const wrongIntervals = selections
+        .map((sel, idx) => ({ sel, correctIv: correct[idx], idx }))
+        .filter(({ sel, correctIv }) => correctIv && sel.type !== correctIv.type);
 
-      // Richtige stehen lassen, falsche rot markieren + nach Pause resetten
+      const intervalNames = wrongIntervals.map(({ idx }) => {
+        const pair = intervalPairs[idx];
+        return `(${formatBound(pair.from)},\u2009${formatBound(pair.to)})`;
+      });
+
+      const isDerivGraph = exercise.prompt.includes('f\u2019');
+      let tipText: string;
+      if (intervalNames.length === 1) {
+        tipText = isDerivGraph
+          ? `Nicht ganz. Schau dir ${intervalNames[0]} nochmal an: Liegt f\u2019 dort \u00fcber oder unter der x-Achse?`
+          : `Nicht ganz. Schau dir ${intervalNames[0]} nochmal an: Geht die Kurve dort nach oben oder unten?`;
+      } else {
+        tipText = isDerivGraph
+          ? 'Nicht ganz. Tipp: Wo f\u2019 \u00fcber der x-Achse liegt \u2192 f steigt. Wo darunter \u2192 f f\u00e4llt.'
+          : 'Nicht ganz. Tipp: Geht die Kurve nach rechts oben \u2192 steigend. Nach rechts unten \u2192 fallend.';
+      }
+
+      feedbackDiv.className = 'feedback-incorrect animate-fade-in';
+      feedbackDiv.textContent = tipText;
+
+      // Richtige ausgrauen, falsche rot markieren
       selections.forEach((sel, idx) => {
         const correctIv = correct[idx];
         const row = rowsContainer.children[idx] as HTMLElement;
-        if (correctIv && sel.type !== correctIv.type) {
-          row.style.borderColor = 'var(--color-error-border)';
-        } else if (correctIv && sel.type === correctIv.type) {
+        if (correctIv && sel.type === correctIv.type) {
+          // Richtig: ausgrauen + Häkchen
+          row.style.opacity = '0.45';
+          row.style.pointerEvents = 'none';
           row.style.borderColor = 'var(--color-success-border)';
-          // Richtige Buttons sperren
-          row.querySelectorAll('button').forEach(b => {
-            (b as HTMLElement).style.pointerEvents = 'none';
-          });
+        } else if (correctIv && sel.type !== correctIv.type) {
+          row.style.borderColor = 'var(--color-error-border)';
         }
       });
 
@@ -676,7 +694,6 @@ function renderClassifyIntervalExercise(
           const row = rowsContainer.children[idx] as HTMLElement;
           if (correctIv && sel.type !== correctIv.type) {
             row.style.borderColor = 'var(--color-border)';
-            // Falsche Auswahl resetten
             sel.type = null;
             const btns = row.querySelectorAll('button');
             btns.forEach(b => {
