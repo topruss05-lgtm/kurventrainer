@@ -648,7 +648,6 @@ function renderClassifyIntervalExercise(
         setTimeout(() => {
           row.style.opacity = '1';
           row.style.borderColor = 'var(--color-success-border)';
-          row.classList.add('animate-success-pulse');
         }, i * 80);
       }
 
@@ -705,23 +704,12 @@ function renderClassifyIntervalExercise(
 
       // ─── Choreographed wrong-answer sequence ───
 
-      // Beat 1 (0ms): Shake falsche Rows
-      selections.forEach((sel, idx) => {
-        const correctIv = correct[idx];
-        const row = rowsContainer.children[idx] as HTMLElement;
-        if (correctIv && sel.type !== correctIv.type) {
-          row.classList.add('animate-gentle-shake');
-        }
-      });
-
-      // Beat 2 (450ms): Shake vorbei \u2192 falsche Buttons resetten + richtige ausblenden + Tipp
+      // Falsche Buttons resetten + richtige ausblenden + Tipp (nach kurzer Pause)
       setTimeout(() => {
         selections.forEach((sel, idx) => {
           const correctIv = correct[idx];
           const row = rowsContainer.children[idx] as HTMLElement;
           if (correctIv && sel.type !== correctIv.type) {
-            // Falsch: Shake entfernen, Auswahl resetten
-            row.classList.remove('animate-gentle-shake');
             sel.type = null;
             row.querySelectorAll('button').forEach(b => {
               const el = b as HTMLElement;
@@ -741,7 +729,7 @@ function renderClassifyIntervalExercise(
 
         feedbackDiv.className = 'feedback-incorrect animate-fade-in';
         feedbackDiv.textContent = tipText;
-      }, 450);
+      }, 300);
     } else {
       // Zweiter Fehler: L\u00f6sung zeigen
       answered = true;
