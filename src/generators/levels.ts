@@ -19,9 +19,7 @@ export interface LevelConfig {
   cases: CaseDefinition[];
 }
 
-// Split cases by module for reverse-inference (some are monotonie, some extremstellen)
-const revMonotonie = REVERSE_INFERENCE_CASES.filter(c => c.id === 'rev-linear');
-const revExtremstellen = REVERSE_INFERENCE_CASES.filter(c => c.id !== 'rev-linear');
+// Reverse-inference: nur Monotonie (rein steigend/fallend, keine Extrema-Terminologie)
 
 // Split true-false by module
 const tfMonotonie = TRUE_FALSE_CASES.filter(c => c.id.includes('monotonie') || c.id.includes('nichtumkehrbar'));
@@ -33,14 +31,14 @@ const LEVELS: LevelConfig[] = [
   { moduleId: 'monotonie', exerciseType: 'identify-points', cases: MONOTONIE_INTERVAL_CASES },
   { moduleId: 'monotonie', exerciseType: 'step-by-step', cases: MONOTONIE_STEP_CASES },
   { moduleId: 'monotonie', exerciseType: 'true-false', cases: tfMonotonie },
-  { moduleId: 'monotonie', exerciseType: 'reverse-inference', cases: revMonotonie },
+  { moduleId: 'monotonie', exerciseType: 'reverse-inference', cases: REVERSE_INFERENCE_CASES },
   { moduleId: 'monotonie', exerciseType: 'graph-sketch', cases: GRAPH_SKETCH_CASES.filter(c => c.id === 'sketch-monotonie') },
 
   // ─── Extremstellen ───
   { moduleId: 'extremstellen', exerciseType: 'identify-points', cases: EXTREMA_IDENTIFY_CASES },
   { moduleId: 'extremstellen', exerciseType: 'step-by-step', cases: EXTREMSTELLEN_STEP_CASES },
   { moduleId: 'extremstellen', exerciseType: 'true-false', cases: tfExtremstellen },
-  { moduleId: 'extremstellen', exerciseType: 'reverse-inference', cases: revExtremstellen },
+  // Extremstellen reverse-inference: kommt später mit HP/TP/SP Terminologie
 
   // ─── Wendestellen ───
   { moduleId: 'wendestellen', exerciseType: 'identify-points', cases: WENDEPUNKTE_IDENTIFY_CASES },
