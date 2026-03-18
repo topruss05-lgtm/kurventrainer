@@ -573,6 +573,7 @@ interface VoiceoverHooks {
   traceCurve: { visible: boolean };
   traceRange: [number, number];
   showTangentOnly: (mx: number) => void;
+  showAtXNoLabel: (mx: number) => void;
 }
 
 interface SectionResult {
@@ -802,6 +803,25 @@ function buildMonotonieExtremstellenSection(
     boardF.update();
   }
 
+  /** Show tangent + derivDot but WITHOUT label on derivDot (for walkthrough) */
+  function showAtXNoLabel(mx: number): void {
+    const y = f(mx);
+    const slope = f1(mx);
+    if (!Number.isFinite(y) || !Number.isFinite(slope)) return;
+    const bb = boardF.getBoundingBox();
+    tangentLine.setEndpoints([bb[0], y + slope * (bb[0] - mx)], [bb[2], y + slope * (bb[2] - mx)]);
+    tangentLine.visible = true;
+    tangentDot.setPosition(mx, y);
+    tangentDot.visible = true;
+    derivDot.setPosition(mx, f1(mx));
+    derivDot.setLabel('');
+    derivDot.visible = true;
+    derivVLine.visible = false;
+    derivHLine.visible = false;
+    boardF.update();
+    boardF1.update();
+  }
+
   function hideGraphics(): void {
     tangentLine.visible = false;
     tangentDot.visible = false;
@@ -926,7 +946,7 @@ function buildMonotonieExtremstellenSection(
   return {
     boards: [boardF, boardF1],
     ctrl,
-    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements, traceCurve, traceRange, showTangentOnly },
+    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements, traceCurve, traceRange, showTangentOnly, showAtXNoLabel },
   };
 }
 
@@ -1297,6 +1317,25 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
 
   function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
 
+  // Walkthrough motions: travel between points, hold at HP/SP/TP
+  type Motion = { tStart: number; tEnd: number; xFrom: number; xTo: number };
+  const walkMotions: Motion[] = [
+    // Travel: start → HP (smw zone, approaching)
+    { tStart: T.smw, tEnd: T.atHP, xFrom: -2.8, xTo: -2.0 },
+    // Hold at HP (entire HP explanation)
+    { tStart: T.atHP, tEnd: T.smf, xFrom: -2.0, xTo: -2.0 },
+    // Travel: HP → SP (smf zone)
+    { tStart: T.smf, tEnd: T.atSP, xFrom: -2.0, xTo: 0.0 },
+    // Hold at SP (entire SP + smf exception explanation)
+    { tStart: T.atSP, tEnd: T.continuesFalling, xFrom: 0.0, xTo: 0.0 },
+    // Travel: SP → TP
+    { tStart: T.continuesFalling, tEnd: T.atTP, xFrom: 0.0, xTo: 2.0 },
+    // Hold at TP (entire TP explanation)
+    { tStart: T.atTP, tEnd: T.steigendAgain, xFrom: 2.0, xTo: 2.0 },
+    // Travel: TP → end (steigend zone)
+    { tStart: T.steigendAgain, tEnd: T.summary, xFrom: 2.0, xTo: 2.8 },
+  ];
+
   const cues: { time: number; action: () => void }[] = [
     // ── PHASE 1: Init — only f graph, f'-board fully hidden ──
     { time: T.intro, action: () => {
@@ -1360,86 +1399,46 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.boardF.update();
       h.boardF1.update();
     }},
-    // ── PHASE 3: Walkthrough — static snapshots, no slow animation ──
+    // ── PHASE 3: Walkthrough — point travels with holds at HP/SP/TP ──
     // smw zone
     { time: T.smw, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
-      h.showAtX(-2.5);
     }},
-    // approaching HP
-    { time: T.approachHP, action: () => {
+    // at HP — hold here until smf starts
+    { time: T.atHP, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
-      h.showAtX(-2.1);
-    }},
-    // at HP
-    { time: T.atHP, action: () => {
       monoCtrl.highlightZone('hp');
-      h.showAtX(-2);
-    }},
-    // past HP — VZW
-    { time: T.atHPvzw, action: () => {
-      h.showAtX(-1.7);
-    }},
-    // HP name shown
-    { time: T.hpName, action: () => {
-      h.showAtX(-2);
     }},
     // smf zone
     { time: T.smf, action: () => {
       h.setGraphState('zone', 'fallend');
       monoCtrl.highlightZone('fallend');
-      h.showAtX(-1);
     }},
-    // approaching SP
-    { time: T.approachSP, action: () => {
+    // at SP — hold here until continuesFalling
+    { time: T.atSP, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
-      h.showAtX(-0.2);
-    }},
-    // at SP
-    { time: T.atSP, action: () => {
       highlightCardsMulti(monoCtrl.cards, ['fallend', 'sp']);
-      h.showAtX(0);
     }},
-    // past SP — no VZW
-    { time: T.noVZW, action: () => {
-      h.showAtX(0.3);
-    }},
-    // SP name
-    { time: T.spName, action: () => {
-      h.showAtX(0);
-    }},
-    // smf exception — fallend zone stays colored
+    // smf exception — fallend zone stays colored while at SP
     { time: T.smfException, action: () => {
       h.setGraphState('zone', 'fallend');
-      h.showAtX(0);
     }},
-    // continues falling
+    // continues falling after SP
     { time: T.continuesFalling, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
-      h.showAtX(1.5);
     }},
-    // at TP
+    // at TP — hold here until steigendAgain
     { time: T.atTP, action: () => {
       monoCtrl.highlightZone('tp');
-      h.showAtX(2);
-    }},
-    // past TP — VZW
-    { time: T.tpVZW, action: () => {
-      h.showAtX(2.3);
-    }},
-    // TP name
-    { time: T.tpName, action: () => {
-      h.showAtX(2);
     }},
     // steigend again
     { time: T.steigendAgain, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
-      h.showAtX(2.5);
     }},
     // summary — clear
     { time: T.summary, action: () => {
@@ -1481,6 +1480,15 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
         if (h.constructionPts[i].visible && mx >= constructionXPositions[i]) {
           h.constructionPts[i].visible = false;
         }
+      }
+    }
+    // Walkthrough: point travels with holds at HP/SP/TP (no label)
+    for (let i = walkMotions.length - 1; i >= 0; i--) {
+      const m = walkMotions[i];
+      if (t >= m.tStart && t < m.tEnd) {
+        const progress = (t - m.tStart) / (m.tEnd - m.tStart);
+        h.showAtXNoLabel(lerp(m.xFrom, m.xTo, progress));
+        break;
       }
     }
     if (!audio1.paused) rafId1 = requestAnimationFrame(tick1);
