@@ -16,7 +16,12 @@ function uid(): string {
 
 function genCubicPositive(): IdentifyPointsExercise {
   const k = pick([1, 2, 3]);
-  const d = pick([0, 0, 1, -1, 2]);
+  // d so w\u00e4hlen dass beide Extrema in [-4, 4] liegen
+  const maxD = Math.min(4 - k, 2);
+  const minD = Math.max(-4 + k, -2);
+  const dOptions = [0];
+  for (let v = minD; v <= maxD; v++) if (v !== 0) dOptions.push(v);
+  const d = pick(dOptions);
   const x1 = -k + d;
   const x2 = k + d;
   const c_coeff = -3 * k * k;
@@ -52,7 +57,11 @@ function genCubicPositive(): IdentifyPointsExercise {
 
 function genCubicNegative(): IdentifyPointsExercise {
   const k = pick([1, 2, 3]);
-  const d = pick([0, 0, 1, -1]);
+  const maxD = Math.min(4 - k, 2);
+  const minD = Math.max(-4 + k, -2);
+  const dOptions = [0];
+  for (let v = minD; v <= maxD; v++) if (v !== 0) dOptions.push(v);
+  const d = pick(dOptions);
   const x1 = -k + d;
   const x2 = k + d;
   const c_coeff = 3 * k * k;
