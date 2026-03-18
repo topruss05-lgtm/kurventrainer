@@ -1333,7 +1333,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     // Hold at TP (entire TP explanation)
     { tStart: T.atTP, tEnd: T.steigendAgain, xFrom: 2.0, xTo: 2.0 },
     // Travel: TP → end (steigend zone)
-    { tStart: T.steigendAgain, tEnd: T.summary, xFrom: 2.0, xTo: 2.8 },
+    { tStart: T.steigendAgain, tEnd: T.summaryVZW, xFrom: 2.0, xTo: 2.8 },
   ];
 
   const cues: { time: number; action: () => void }[] = [
@@ -1440,11 +1440,20 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
     }},
-    // summary — clear
-    { time: T.summary, action: () => {
+    // "VZW — Extremstelle" → show HP card state, then TP
+    { time: T.summaryVZW, action: () => {
       h.hideGraphics();
-      h.setGraphState('blank');
-      monoCtrl.clearHighlights();
+      monoCtrl.clearAll();
+      monoCtrl.onCardClick('hp');
+    }},
+    { time: T.summaryVZW + 2.0, action: () => {
+      monoCtrl.onCardClick('hp'); // deselect
+      monoCtrl.onCardClick('tp');
+    }},
+    // "Kein VZW — Sattelpunkt" → show SP card state
+    { time: T.summarySP, action: () => {
+      monoCtrl.onCardClick('tp'); // deselect
+      monoCtrl.onCardClick('sp');
     }},
     // outro — reset
     { time: T.outro, action: () => {
