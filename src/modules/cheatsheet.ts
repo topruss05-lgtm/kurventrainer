@@ -569,6 +569,9 @@ interface VoiceoverHooks {
   constructionPts: ReturnType<typeof createPoint>[];
   /** All f' curve/band/point elements — to show/hide f' curve */
   f1Elements: { visible: boolean }[];
+  /** Trace curve for sweep animation (mutable xRange) */
+  traceCurve: { visible: boolean };
+  traceRange: [number, number];
 }
 
 interface SectionResult {
@@ -665,6 +668,12 @@ function buildMonotonieExtremstellenSection(
     boardF1.addElement(pt);
     return pt;
   });
+
+  // Trace curve: f' drawn progressively during sweep (mutable xRange)
+  const traceRange: [number, number] = [-2.8, -2.8];
+  const traceCurve = createFunctionCurve(f1, { color: COLOR_F1, strokeWidth: 2, xRange: traceRange });
+  traceCurve.visible = false;
+  boardF1.addElement(traceCurve);
 
   // Collect all f'-board visual elements (curve segments + bands + labeled points)
   const f1Elements: { visible: boolean }[] = [
@@ -902,7 +911,7 @@ function buildMonotonieExtremstellenSection(
   return {
     boards: [boardF, boardF1],
     ctrl,
-    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements },
+    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements, traceCurve, traceRange },
   };
 }
 
@@ -1271,27 +1280,10 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   const SWEEP_X1 = 2.8;
   const constructionXPositions = [-2.47, Math.sqrt(2), 2];
 
-  // Walkthrough motions: point travels across f during interpretation
-  type Motion = { tStart: number; tEnd: number; xFrom: number; xTo: number };
-  const walkMotions: Motion[] = [
-    { tStart: T.smw, tEnd: T.approachHP, xFrom: -2.8, xTo: -2.2 },
-    { tStart: T.approachHP, tEnd: T.atHP, xFrom: -2.2, xTo: -2.0 },
-    { tStart: T.atHP, tEnd: T.atHPvzw, xFrom: -2.0, xTo: -2.0 },
-    { tStart: T.atHPvzw, tEnd: T.hpName, xFrom: -2.0, xTo: -1.6 },
-    { tStart: T.smf, tEnd: T.approachSP, xFrom: -1.6, xTo: -0.2 },
-    { tStart: T.approachSP, tEnd: T.atSP, xFrom: -0.2, xTo: 0.0 },
-    { tStart: T.atSP, tEnd: T.noVZW, xFrom: 0.0, xTo: 0.0 },
-    { tStart: T.noVZW, tEnd: T.continuesFalling, xFrom: 0.0, xTo: 0.5 },
-    { tStart: T.continuesFalling, tEnd: T.atTP, xFrom: 0.5, xTo: 2.0 },
-    { tStart: T.atTP, tEnd: T.tpVZW, xFrom: 2.0, xTo: 2.0 },
-    { tStart: T.tpVZW, tEnd: T.steigendAgain, xFrom: 2.0, xTo: 2.5 },
-    { tStart: T.steigendAgain, tEnd: T.summary, xFrom: 2.5, xTo: 2.8 },
-  ];
-
   function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
 
   const cues: { time: number; action: () => void }[] = [
-    // ── PHASE 1: Init — only f graph ──
+    // ── PHASE 1: Init — only f graph, f'-board fully hidden ──
     { time: T.intro, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
@@ -1300,16 +1292,17 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.boardF1.canvas.style.display = 'none';
       for (const el of h.f1Elements) el.visible = false;
       for (const pt of h.constructionPts) pt.visible = false;
+      h.traceCurve.visible = false;
     }},
-    // Show f'-board (empty axes only)
-    { time: T.tangentIntro, action: () => {
-      h.f1Label.style.display = 'none';
-      h.boardF1.canvas.style.display = '';
-      h.boardF1.update();
-    }},
-    // Example 1: x=-2.47, m=3
+    // Example 1: tangent on f
     { time: T.example1, action: () => {
       h.showAtX(-2.47);
+    }},
+    // "Diesen Wert tragen wir als Punkt ein" — f'-board appears (with label placeholder for spacing) + point
+    { time: T.example1Point, action: () => {
+      h.f1Label.style.display = '';
+      h.f1Label.textContent = '';  // empty label for spacing, no "Graph von f'" yet
+      h.boardF1.canvas.style.display = '';
       h.constructionPts[0].visible = true;
       h.boardF1.update();
     }},
@@ -1325,66 +1318,117 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.constructionPts[2].visible = true;
       h.boardF1.update();
     }},
-    // Hide tangent before sweep
+    // Hide tangent before sweep, start trace curve
     { time: T.sweepIntro - 0.9, action: () => {
       h.hideGraphics();
+      h.traceRange[0] = SWEEP_X0;
+      h.traceRange[1] = SWEEP_X0;
+      h.traceCurve.visible = true;
     }},
-    // ── PHASE 2: After sweep — f' curve + label appear ──
+    // ── PHASE 2: After sweep — real f' curve + label appear, trace hidden ──
     { time: T.sweepResult, action: () => {
       h.hideGraphics();
+      h.traceCurve.visible = false;
       for (const pt of h.constructionPts) pt.visible = false;
       for (const el of h.f1Elements) el.visible = true;
-      h.f1Label.style.display = '';
+      h.f1Label.textContent = "Graph von f'";
       h.setGraphState('blank');
       h.boardF.update();
       h.boardF1.update();
     }},
-    // ── PHASE 3: Walkthrough ──
+    // ── PHASE 3: Walkthrough — static snapshots, no slow animation ──
+    // smw zone
     { time: T.smw, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
+      h.showAtX(-2.5);
     }},
+    // approaching HP
     { time: T.approachHP, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
+      h.showAtX(-2.1);
     }},
+    // at HP
     { time: T.atHP, action: () => {
       monoCtrl.highlightZone('hp');
+      h.showAtX(-2);
     }},
+    // past HP — VZW
+    { time: T.atHPvzw, action: () => {
+      h.showAtX(-1.7);
+    }},
+    // HP name shown
+    { time: T.hpName, action: () => {
+      h.showAtX(-2);
+    }},
+    // smf zone
     { time: T.smf, action: () => {
       h.setGraphState('zone', 'fallend');
       monoCtrl.highlightZone('fallend');
+      h.showAtX(-1);
     }},
+    // approaching SP
     { time: T.approachSP, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
+      h.showAtX(-0.2);
     }},
+    // at SP
     { time: T.atSP, action: () => {
       highlightCardsMulti(monoCtrl.cards, ['fallend', 'sp']);
+      h.showAtX(0);
     }},
+    // past SP — no VZW
+    { time: T.noVZW, action: () => {
+      h.showAtX(0.3);
+    }},
+    // SP name
+    { time: T.spName, action: () => {
+      h.showAtX(0);
+    }},
+    // smf exception — fallend zone stays colored
     { time: T.smfException, action: () => {
       h.setGraphState('zone', 'fallend');
+      h.showAtX(0);
     }},
+    // continues falling
     { time: T.continuesFalling, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
+      h.showAtX(1.5);
     }},
+    // at TP
     { time: T.atTP, action: () => {
       monoCtrl.highlightZone('tp');
+      h.showAtX(2);
     }},
+    // past TP — VZW
+    { time: T.tpVZW, action: () => {
+      h.showAtX(2.3);
+    }},
+    // TP name
+    { time: T.tpName, action: () => {
+      h.showAtX(2);
+    }},
+    // steigend again
     { time: T.steigendAgain, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
+      h.showAtX(2.5);
     }},
+    // summary — clear
     { time: T.summary, action: () => {
       h.hideGraphics();
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
     }},
+    // outro — reset
     { time: T.outro, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
       for (const pt of h.constructionPts) pt.visible = false;
+      h.traceCurve.visible = false;
       h.boardF.update();
       h.boardF1.update();
     }},
@@ -1401,25 +1445,18 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       cues[cueIdx1].action();
       cueIdx1++;
     }
-    // Sweep: tangent travels across f, traces f' path
+    // Sweep: tangent travels across f, trace curve grows behind dot
     if (t >= T.sweepIntro && t < T.sweepResult) {
       const progress = (t - T.sweepIntro) / (T.sweepResult - T.sweepIntro);
       const mx = lerp(SWEEP_X0, SWEEP_X1, progress);
       h.showAtX(mx);
+      h.traceRange[1] = mx;  // grow trace curve to current position
+      h.boardF1.update();
+      // Hide construction pts as sweep dot passes
       for (let i = 0; i < h.constructionPts.length; i++) {
         if (h.constructionPts[i].visible && mx > constructionXPositions[i] + 0.3) {
           h.constructionPts[i].visible = false;
-          h.boardF1.update();
         }
-      }
-    }
-    // Walkthrough: point moves along f during interpretation
-    for (let i = walkMotions.length - 1; i >= 0; i--) {
-      const m = walkMotions[i];
-      if (t >= m.tStart && t < m.tEnd) {
-        const progress = (t - m.tStart) / (m.tEnd - m.tStart);
-        h.showAtX(lerp(m.xFrom, m.xTo, progress));
-        break;
       }
     }
     if (!audio1.paused) rafId1 = requestAnimationFrame(tick1);
@@ -1429,7 +1466,9 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     playingVoiceover = false;
     for (const pt of h.constructionPts) pt.visible = false;
     for (const el of h.f1Elements) el.visible = true;
+    h.traceCurve.visible = false;
     h.f1Label.style.display = '';
+    h.f1Label.textContent = "Graph von f'";
     h.boardF1.canvas.style.display = '';
     h.hideGraphics();
     h.hideSpCallout(true);
