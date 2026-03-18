@@ -29,7 +29,7 @@ const e3Exercises: StepByStepExercise[] = [
         explanation: 'f(x) = x³ − 3x enthält nur ungerade Potenzen (x³ und x¹). Also ist f punktsymmetrisch zum Ursprung: f(−x) = −f(x).',
       },
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 3x^2 - 3",
@@ -82,7 +82,7 @@ const e3Exercises: StepByStepExercise[] = [
         explanation: "f''(1) = 6 > 0 ⟹ Tiefpunkt bei x = 1. f(1) = −2 ⟹ T(1 | −2).",
       },
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x",
@@ -152,7 +152,7 @@ const e3Exercises: StepByStepExercise[] = [
         explanation: 'f(x) = x³ − 12x enthält nur ungerade Potenzen. Es gilt f(−x) = −f(x), also punktsymmetrisch zum Ursprung.',
       },
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 3x^2 - 12",
@@ -205,7 +205,7 @@ const e3Exercises: StepByStepExercise[] = [
         explanation: "f''(2) = 12 > 0 ⟹ Tiefpunkt. f(2) = 8 − 24 = −16 ⟹ T(2 | −16).",
       },
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x",
@@ -275,7 +275,7 @@ const e3Exercises: StepByStepExercise[] = [
         explanation: 'f enthält x³ (ungerade), x² (gerade), x (ungerade) und eine Konstante. Es gilt weder f(−x) = f(x) noch f(−x) = −f(x). Keine Symmetrie.',
       },
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = -3x^2 + 12x - 9",
@@ -328,7 +328,7 @@ const e3Exercises: StepByStepExercise[] = [
         explanation: "f''(3) = −6 < 0 ⟹ Hochpunkt. f(3) = −27 + 54 − 27 + 2 = 2 ⟹ H(3 | 2).",
       },
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = -6x + 12",
@@ -394,7 +394,7 @@ const a2Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 3x^2 - 3",
@@ -474,7 +474,7 @@ const a2Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 3x^2 - 12",
@@ -559,7 +559,7 @@ const a3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 2x - 4",
@@ -619,7 +619,7 @@ const a3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = -2x + 6",
@@ -686,7 +686,7 @@ const c7Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 3x^2 + 1",
@@ -758,7 +758,7 @@ const d2Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x",
@@ -830,7 +830,7 @@ const d2Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x - 12",
@@ -910,7 +910,7 @@ const f6Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Ein Ball wird geworfen. Die Höhe (in Metern) wird durch f(t) = −t² + 6t + 2 beschrieben, t ∈ [0, 7].\nWelches ist f'(t)?",
+        instruction: "Bestimme f'(t).",
         inputType: 'multiple-choice',
         options: [
           "f'(t) = -2t + 6",
@@ -1005,7 +1005,7 @@ const f6Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Ein Unternehmen modelliert seinen Gewinn (in Tausend Euro) durch f(x) = −2x² + 24x − 50, wobei x die Produktionsmenge (in Tausend Stück) auf [1, 10] ist.\nWelches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = -4x + 24",

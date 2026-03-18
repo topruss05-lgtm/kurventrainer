@@ -319,7 +319,7 @@ function genE3Guided(): StepByStepExercise {
   const steps: StepByStepExercise['steps'] = [
     // Step 1: Symmetrie
     {
-      instruction: `Gegeben ist \\(${fLatex}\\). Untersuche zunächst die Symmetrie. Welche Symmetrie liegt vor?`,
+      instruction: 'Untersuche zunächst die Symmetrie. Welche Symmetrie liegt vor?',
       inputType: 'multiple-choice',
       options: shuffledSym,
       correctAnswer: correctSymIndex,

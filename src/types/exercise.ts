@@ -118,6 +118,8 @@ export type StepInputType = 'multiple-choice' | 'number' | 'number-set' | 'sign-
 export interface StepByStepExercise extends BaseExercise {
   type: 'step-by-step';
   procedure: string;
+  /** Aufgabenstellung — überschreibt PROCEDURE_LABELS wenn gesetzt */
+  task?: string;
   steps: Array<{
     instruction: string;
     inputType: StepInputType;

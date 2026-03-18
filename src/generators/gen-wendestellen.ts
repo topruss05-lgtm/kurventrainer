@@ -261,7 +261,7 @@ function genD3Guided(): StepByStepExercise {
     derivatives: buildDerivatives(p),
     steps: [
       {
-        instruction: 'Welches ist f\'\'(x)?',
+        instruction: `Bestimme \\(f''(x)\\).`,
         inputType: 'multiple-choice',
         options: fppOptions,
         correctAnswer: fppCorrect,
@@ -374,7 +374,7 @@ function genD5Guided(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: 'Welches ist f\'\'(x)?',
+        instruction: `Bestimme \\(f''(x)\\).`,
         inputType: 'multiple-choice',
         options: fppOptions,
         correctAnswer: fppCorrect,
@@ -529,7 +529,7 @@ function genD2Guided(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: 'Welches ist f\'\'(x)?',
+        instruction: `Bestimme \\(f''(x)\\).`,
         inputType: 'multiple-choice',
         options: fppOptions,
         correctAnswer: fppCorrect,

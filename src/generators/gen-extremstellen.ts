@@ -253,7 +253,7 @@ function genC1Guided(): StepByStepExercise {
 
   const steps: StepByStepExercise['steps'] = [
     {
-      instruction: `Gegeben ist \\(${fLatex}\\). Welches ist \\(f'(x)\\)?`,
+      instruction: `Bestimme \\(f'(x)\\).`,
       inputType: 'multiple-choice',
       options: mc.options,
       correctAnswer: mc.correctIndex,
@@ -444,7 +444,7 @@ function genC2Guided(): StepByStepExercise {
 
   const steps: StepByStepExercise['steps'] = [
     {
-      instruction: `Gegeben ist \\(${fLatex}\\). Welches ist \\(f'(x)\\)?`,
+      instruction: `Bestimme \\(f'(x)\\).`,
       inputType: 'multiple-choice',
       options: mc.options,
       correctAnswer: mc.correctIndex,
@@ -585,7 +585,7 @@ function genB2Guided(): StepByStepExercise {
   // Only 2 steps: find f'(x) and solve f'(x) = 0
   const steps: StepByStepExercise['steps'] = [
     {
-      instruction: `Gegeben ist \\(${fLatex}\\). Welches ist \\(f'(x)\\)?`,
+      instruction: `Bestimme \\(f'(x)\\).`,
       inputType: 'multiple-choice',
       options: mc.options,
       correctAnswer: mc.correctIndex,

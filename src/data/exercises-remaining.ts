@@ -18,7 +18,7 @@ const b3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 3x^2 - 3",
@@ -71,7 +71,7 @@ const b3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 2x - 4",
@@ -142,7 +142,7 @@ const c3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f'(x)?",
+        instruction: "Bestimme f'(x).",
         inputType: 'multiple-choice',
         options: [
           "f'(x) = 4x^3 - 12x^2",
@@ -337,7 +337,7 @@ const d4Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 20x^3",

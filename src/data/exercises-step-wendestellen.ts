@@ -20,7 +20,7 @@ const d3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x - 6",
@@ -87,7 +87,7 @@ const d3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x - 12",
@@ -154,7 +154,7 @@ const d3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x + 6",
@@ -221,7 +221,7 @@ const d3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x",
@@ -264,7 +264,7 @@ const d3Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x + 6",
@@ -373,7 +373,7 @@ const d5Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x - 6",
@@ -445,7 +445,7 @@ const d5Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x - 12",
@@ -517,7 +517,7 @@ const d5Exercises: StepByStepExercise[] = [
     },
     steps: [
       {
-        instruction: "Welches ist f''(x)?",
+        instruction: "Bestimme f''(x).",
         inputType: 'multiple-choice',
         options: [
           "f''(x) = 6x",

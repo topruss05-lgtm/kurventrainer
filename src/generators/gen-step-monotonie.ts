@@ -234,11 +234,11 @@ function genA2Guided(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: `Gegeben ist \\(${fLatex}\\). Welches ist \\(f'(x)\\)?`,
+        instruction: `Bestimme \\(f'(x)\\).`,
         inputType: 'multiple-choice',
         options: shuffledOptions.map(s => s),
         correctAnswer: correctFPrimeIndex,
-        hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\' = n·xⁿ⁻¹.',
+        hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\u2032 = n\u00b7xⁿ⁻\u00b9.',
         explanation: `Die Ableitung ist \\(${fPrimeLatex}\\).`,
       },
       {
@@ -312,7 +312,7 @@ function genA2Free(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: `Gegeben ist \\(${fLatex}\\). Untersuche \\(f\\) auf Monotonie. Gib die Nullstellen von \\(f'\\) an.`,
+        instruction: `Gib die Nullstellen von \\(f'\\) an.`,
         inputType: 'number-set',
         correctAnswer: [x1, x2],
         hint: 'Bilde zunächst f\'(x), setze f\'(x) = 0 und löse die quadratische Gleichung.',
@@ -374,6 +374,7 @@ function genA3Guided(): StepByStepExercise {
     module: 'monotonie',
     competency: 'K3',
     procedure: 'monotonie-intervall',
+    task: `Zeige, dass f auf \\(${intervalLabel}\\) ${monoResult} ist.`,
     function: {
       latex: fLatex,
       fn: (x: number) => evalPoly(fCoeffs, x),
@@ -386,11 +387,11 @@ function genA3Guided(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: `Gegeben ist \\(${fLatex}\\). Zeige, ob \\(f\\) auf \\(${intervalLabel}\\) monoton wachsend oder fallend ist. Welches ist \\(f'(x)\\)?`,
+        instruction: `Bestimme \\(f'(x)\\).`,
         inputType: 'multiple-choice',
         options: shuffledOptions.map(s => s),
         correctAnswer: correctFPrimeIndex,
-        hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\' = n·xⁿ⁻¹.',
+        hint: 'Leite jeden Term einzeln ab: Potenzregel (xⁿ)\u2032 = n\u00b7xⁿ⁻\u00b9.',
         explanation: `Die Ableitung ist \\(${fPrimeLatex}\\).`,
       },
       {
@@ -449,6 +450,7 @@ function genA3Free(): StepByStepExercise {
     module: 'monotonie',
     competency: 'K3',
     procedure: 'monotonie-intervall',
+    task: `Zeige, dass f auf \\(${intervalLabel}\\) ${monoResult} ist.`,
     function: {
       latex: fLatex,
       fn: (x: number) => evalPoly(fCoeffs, x),
@@ -461,10 +463,10 @@ function genA3Free(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: `Gegeben ist \\(${fLatex}\\). Zeige, dass \\(f\\) auf \\(${intervalLabel}\\) ${monoResult} ist.`,
+        instruction: `Berechne einen geeigneten Wert von \\(f'\\) im Intervall \\(${intervalLabel}\\).`,
         inputType: 'number',
         correctAnswer: fPrimeAtTest,
-        hint: `Bilde f'(x), wähle einen Testwert im Intervall und berechne f\' dort. Zeige, dass f\' auf dem ganzen Intervall dasselbe Vorzeichen hat.`,
+        hint: `Bilde f'(x), wähle einen Testwert im Intervall und berechne f' dort. Zeige, dass f' auf dem ganzen Intervall dasselbe Vorzeichen hat.`,
         explanation: `\\(${fPrimeLatex}\\). z.B. \\(f'(${testVal}) = ${fPrimeAtTest}\\). Da \\(f'\\) auf \\(${intervalLabel}\\) keine Nullstelle hat, ist \\(f'\\) dort überall ${fPrimeAtTest > 0 ? 'positiv' : 'negativ'}, also \\(f\\) ${monoResult}.`,
       },
     ],

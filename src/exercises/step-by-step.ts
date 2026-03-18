@@ -2,7 +2,7 @@ import type { StepByStepExercise } from '../types/exercise.js';
 import { recordResult } from '../progress/storage.js';
 import { createBoard, destroyBoard, calcBoundingBox } from '../graph/board-factory.js';
 import { plotFunction, highlightPoint, COLORS } from '../graph/function-plotter.js';
-import { renderExerciseLatex, setMathOrText, renderMixedContent } from '../render-latex.js';
+import { setMathOrText, renderMixedContent } from '../render-latex.js';
 import { PROCEDURE_LABELS } from './procedure-labels.js';
 
 function validateNumber(input: string, correct: number, tolerance: number): boolean {
@@ -65,18 +65,17 @@ export function renderStepByStep(
 
   const header = document.createElement('div');
   header.className = 'mb-4';
+  header.style.cssText = 'font-size: 1.05rem; line-height: 1.7;';
 
-  const fnDisplay = document.createElement('h3');
-  fnDisplay.className = 'text-xl font-semibold mb-3';
-  fnDisplay.style.fontFamily = 'var(--font-display)';
-  renderExerciseLatex(fnDisplay, exercise.function.latex);
-  header.appendChild(fnDisplay);
+  const fnLine = document.createElement('p');
+  fnLine.className = 'mb-1';
+  renderMixedContent(fnLine, `Gegeben ist die Funktion f mit \\(${exercise.function.latex}\\).`);
+  header.appendChild(fnLine);
 
-  const taskLabel = PROCEDURE_LABELS[exercise.procedure];
+  const taskLabel = exercise.task ?? PROCEDURE_LABELS[exercise.procedure];
   if (taskLabel) {
     const taskEl = document.createElement('p');
-    taskEl.style.cssText = 'color: var(--color-ink-secondary); font-size: 0.95rem;';
-    taskEl.textContent = taskLabel;
+    renderMixedContent(taskEl, taskLabel);
     header.appendChild(taskEl);
   }
 
