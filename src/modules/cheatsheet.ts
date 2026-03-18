@@ -1294,27 +1294,33 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       for (const pt of h.constructionPts) pt.visible = false;
       h.traceCurve.visible = false;
     }},
-    // Example 1: tangent on f
+    // Example 1: tangent on f (no point yet)
     { time: T.example1, action: () => {
       h.showAtX(-2.47);
     }},
-    // "Diesen Wert tragen wir als Punkt ein" — f'-board appears (with label placeholder for spacing) + point
+    // "Diesen Wert tragen wir als Punkt ein" — f'-board appears + point
     { time: T.example1Point, action: () => {
       h.f1Label.style.display = '';
-      h.f1Label.textContent = '';  // empty label for spacing, no "Graph von f'" yet
+      h.f1Label.textContent = '';
       h.boardF1.canvas.style.display = '';
       h.constructionPts[0].visible = true;
       h.boardF1.update();
     }},
-    // Example 2: x=√2, m≈-1
+    // Example 2: tangent first
     { time: T.example2, action: () => {
       h.showAtX(Math.sqrt(2));
+    }},
+    // Example 2: point appears delayed
+    { time: T.example2 + 1.5, action: () => {
       h.constructionPts[1].visible = true;
       h.boardF1.update();
     }},
-    // Example 3: x=2, m=0
+    // Example 3: tangent first
     { time: T.example3, action: () => {
       h.showAtX(2);
+    }},
+    // Example 3: point appears delayed
+    { time: T.example3 + 1.5, action: () => {
       h.constructionPts[2].visible = true;
       h.boardF1.update();
     }},
@@ -1574,14 +1580,20 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   audio2.addEventListener('ended', stopPlayback2);
 
   // Stop any voiceover when student manually interacts
-  // Block interaction during voiceover playback (except play/stop buttons)
-  container.addEventListener('pointerdown', (e) => {
+  // Block ALL interaction during voiceover playback (except play/stop buttons)
+  function blockIfPlaying(e: Event): void {
     if (!playingVoiceover) return;
     const isPlayBtn = playBtn.contains(e.target as Node) || nBtn.contains(e.target as Node);
     if (isPlayBtn) return;
     e.stopPropagation();
     e.preventDefault();
-  }, true);
+  }
+  container.addEventListener('pointerdown', blockIfPlaying, true);
+  container.addEventListener('pointermove', blockIfPlaying, true);
+  container.addEventListener('click', blockIfPlaying, true);
+  container.addEventListener('touchstart', blockIfPlaying, true);
+  container.addEventListener('touchmove', blockIfPlaying, true);
+  container.addEventListener('mousemove', blockIfPlaying, true);
 
   return () => {
     stopPlayback1();
