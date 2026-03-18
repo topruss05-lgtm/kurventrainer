@@ -34,12 +34,6 @@ export function renderFreeMode(
   const header = document.createElement('div');
   header.className = 'mb-4';
 
-  const procedureLabel = document.createElement('p');
-  procedureLabel.className = 'text-sm font-medium mb-1';
-  procedureLabel.style.color = 'var(--color-ink-muted)';
-  procedureLabel.textContent = exercise.procedure;
-  header.appendChild(procedureLabel);
-
   const fnDisplay = document.createElement('h3');
   fnDisplay.className = 'text-xl font-semibold mb-3';
   fnDisplay.style.fontFamily = 'var(--font-display)';
@@ -61,18 +55,23 @@ export function renderFreeMode(
   container.appendChild(answerSection);
 
   const highlights = exercise.verificationGraph?.highlights ?? [];
+  const proc = exercise.procedure;
+  const isMonotonie = proc === 'monotonie' || proc === 'monotonie-intervall';
 
-  if (highlights.length > 0) {
+  if (isMonotonie && highlights.length > 0) {
+    // Monotonie: frage nach Nullstellen von f' (x-Werte der Extremstellen)
+    renderNullstellenInput(answerSection, highlights, exercise, onComplete, () => {
+      showSolution(container, exercise);
+      showVerificationGraph(container, exercise, (b) => { board = b; });
+    });
+  } else if (highlights.length > 0) {
     renderCoordinateInput(answerSection, highlights, exercise, onComplete, () => {
       showSolution(container, exercise);
       showVerificationGraph(container, exercise, (b) => { board = b; });
     });
   } else {
-    renderShowSolutionButton(answerSection, () => {
-      showSolution(container, exercise);
-      recordResult(exercise.module, exercise.id, true);
-      onComplete();
-    });
+    // Fallback: Lösung direkt über step-by-step Lösungsweg zeigen
+    renderHintButton(answerSection, exercise, onComplete);
   }
 
   return () => {
@@ -194,7 +193,9 @@ function renderCoordinateInput(
     } else {
       const fb = document.createElement('div');
       fb.className = 'feedback-incorrect animate-fade-in mt-3';
-      fb.textContent = 'Noch nicht ganz richtig. Überprüfe die rot markierten Werte.';
+      fb.textContent = 'Noch nicht ganz richtig. \u00dcberpr\u00fcfe die rot markierten Werte.';
+      failCount++;
+      if (failCount >= 1) hintBtn.style.display = 'block';
       feedbackArea.appendChild(fb);
 
       setTimeout(() => {
@@ -207,57 +208,160 @@ function renderCoordinateInput(
     }
   });
 
-  // Show solution button below check
-  const showSolBtn = document.createElement('button');
-  showSolBtn.style.cssText = `
-    display: block; width: 100%; margin-top: 0.75rem; padding: 0.625rem;
+  // Hinweis-Button: erscheint erst nach Fehlversuch
+  let failCount = 0;
+  const hintBtn = document.createElement('button');
+  hintBtn.style.cssText = `
+    display: none; width: 100%; margin-top: 0.75rem; padding: 0.625rem;
     background: none; border: 1px solid var(--color-border); border-radius: 0.75rem;
     font-size: 0.85rem; color: var(--color-ink-muted); cursor: pointer;
     transition: border-color 0.2s, color 0.2s;
   `;
-  showSolBtn.textContent = 'Lösung anzeigen';
-  showSolBtn.addEventListener('mouseenter', () => {
-    showSolBtn.style.borderColor = 'var(--color-border-hover)';
-    showSolBtn.style.color = 'var(--color-ink-secondary)';
-  });
-  showSolBtn.addEventListener('mouseleave', () => {
-    showSolBtn.style.borderColor = 'var(--color-border)';
-    showSolBtn.style.color = 'var(--color-ink-muted)';
-  });
-  showSolBtn.addEventListener('click', () => {
-    showSolBtn.style.display = 'none';
-    checkBtn.disabled = true;
-    inputRows.forEach(({ xInput, yInput }) => {
-      xInput.disabled = true;
-      yInput.disabled = true;
-    });
+  hintBtn.textContent = 'Hinweis: L\u00f6sungsweg anzeigen';
+  hintBtn.addEventListener('click', () => {
+    hintBtn.style.display = 'none';
     showSolution(container.parentElement!, exercise);
-    showVerificationGraph(container.parentElement!, exercise, () => {});
-    recordResult(exercise.module, exercise.id, true);
-    onComplete();
   });
-  container.appendChild(showSolBtn);
+  container.appendChild(hintBtn);
 }
 
-function renderShowSolutionButton(
+// ─── Monotonie: frage nach Nullstellen von f' ───
+
+function renderNullstellenInput(
   container: HTMLElement,
-  onReveal: () => void,
+  highlights: Array<{ x: number; y: number; label: string }>,
+  exercise: StepByStepExercise,
+  onComplete: () => void,
+  onCorrect: () => void,
+): void {
+  const xValues = highlights.map(h => h.x).sort((a, b) => a - b);
+
+  const prompt = document.createElement('p');
+  prompt.className = 'font-medium mb-3 text-sm';
+  prompt.textContent = `Bestimme die Nullstellen von f\u2019 (${xValues.length} St\u00fcck):`;
+  container.appendChild(prompt);
+
+  const fieldsRow = document.createElement('div');
+  fieldsRow.style.cssText = 'display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem;';
+
+  const inputs: HTMLInputElement[] = [];
+  const subscripts = ['\u2081', '\u2082', '\u2083', '\u2084'];
+
+  for (let i = 0; i < xValues.length; i++) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
+
+    const label = document.createElement('span');
+    label.className = 'font-medium text-sm';
+    label.textContent = xValues.length > 1 ? `x${subscripts[i] ?? i + 1} =` : 'x =';
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.inputMode = 'decimal';
+    inp.className = 'p-3 rounded-xl border min-h-[44px]';
+    inp.style.cssText = 'width: 5rem; border-color: var(--color-border); background: var(--color-surface-inset);';
+
+    wrap.append(label, inp);
+    fieldsRow.appendChild(wrap);
+    inputs.push(inp);
+  }
+
+  container.appendChild(fieldsRow);
+
+  const feedbackArea = document.createElement('div');
+  container.appendChild(feedbackArea);
+
+  const checkBtn = document.createElement('button');
+  checkBtn.className = 'btn-primary w-full py-3 rounded-xl mt-2 min-h-[44px]';
+  checkBtn.textContent = 'Pr\u00fcfen';
+  container.appendChild(checkBtn);
+
+  let solved = false;
+
+  checkBtn.addEventListener('click', () => {
+    if (solved) return;
+    const values = inputs.map(inp => inp.value.trim());
+    if (values.some(v => !v)) return;
+
+    const tolerance = 0.1;
+    const used = new Set<number>();
+    let allCorrect = true;
+
+    for (let i = 0; i < values.length; i++) {
+      const matchIdx = xValues.findIndex((x, idx) =>
+        !used.has(idx) && validateNumber(values[i], x, tolerance),
+      );
+      if (matchIdx !== -1) {
+        used.add(matchIdx);
+        inputs[i].style.borderColor = 'var(--color-success)';
+      } else {
+        allCorrect = false;
+        inputs[i].style.borderColor = 'var(--color-error)';
+      }
+    }
+
+    feedbackArea.textContent = '';
+    if (allCorrect) {
+      solved = true;
+      inputs.forEach(inp => { inp.disabled = true; });
+      checkBtn.disabled = true;
+      recordResult(exercise.module, exercise.id, true);
+
+      const fb = document.createElement('div');
+      fb.className = 'feedback-correct animate-fade-in mt-3';
+      fb.textContent = `Richtig! Die Nullstellen von f\u2019 sind ${xValues.map((x, i) => `x${subscripts[i] ?? i + 1} = ${x}`).join(' und ')}.`;
+      feedbackArea.appendChild(fb);
+
+      onCorrect();
+      onComplete();
+    } else {
+      const fb = document.createElement('div');
+      fb.className = 'feedback-incorrect animate-fade-in mt-3';
+      fb.textContent = 'Noch nicht richtig. \u00dcberpr\u00fcfe die rot markierten Werte.';
+      feedbackArea.appendChild(fb);
+
+      setTimeout(() => {
+        inputs.forEach(inp => { inp.style.borderColor = 'var(--color-border)'; });
+        feedbackArea.textContent = '';
+      }, 2000);
+    }
+  });
+
+  // Enter-Navigation
+  inputs.forEach((inp, i) => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        if (i < inputs.length - 1) inputs[i + 1].focus();
+        else checkBtn.click();
+      }
+    });
+  });
+}
+
+// ─── Hinweis-Button statt "Lösung anzeigen" ───
+
+function renderHintButton(
+  container: HTMLElement,
+  exercise: StepByStepExercise,
+  onComplete: () => void,
 ): void {
   const info = document.createElement('p');
   info.className = 'text-sm mb-3';
   info.style.color = 'var(--color-ink-muted)';
-  info.textContent = 'Rechne die Aufgabe auf Papier. Wenn du fertig bist, kannst du die Musterlösung anzeigen.';
+  info.textContent = 'Rechne die Aufgabe auf Papier und pr\u00fcfe dein Ergebnis.';
   container.appendChild(info);
 
-  const btn = document.createElement('button');
-  btn.className = 'btn-primary w-full py-3 rounded-xl min-h-[44px]';
-  btn.textContent = 'Musterlösung anzeigen';
-  btn.addEventListener('click', () => {
-    btn.style.display = 'none';
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'btn-primary w-full py-3 rounded-xl min-h-[44px]';
+  doneBtn.textContent = 'Fertig \u2014 L\u00f6sungsweg anzeigen';
+  doneBtn.addEventListener('click', () => {
+    doneBtn.style.display = 'none';
     info.style.display = 'none';
-    onReveal();
+    showSolution(container.parentElement!, exercise);
+    recordResult(exercise.module, exercise.id, true);
+    onComplete();
   });
-  container.appendChild(btn);
+  container.appendChild(doneBtn);
 }
 
 function showSolution(

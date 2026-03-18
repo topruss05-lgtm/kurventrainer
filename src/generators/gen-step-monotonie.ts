@@ -204,11 +204,11 @@ function genA2Guided(): StepByStepExercise {
   const signMid = fPrimeMid > 0 ? '> 0' : '< 0';
   const signRight = fPrimeRight > 0 ? '> 0' : '< 0';
 
-  // Monotonie intervals MC
-  const correctMonotonie = `f \\text{ smw auf } (-\\infty;\\, ${x1}) \\text{ und } (${x2};\\, +\\infty), \\text{ smf auf } (${x1};\\, ${x2})`;
-  const wrongMono1 = `f \\text{ smf auf } (-\\infty;\\, ${x1}) \\text{ und } (${x2};\\, +\\infty), \\text{ smw auf } (${x1};\\, ${x2})`;
-  const wrongMono2 = `f \\text{ smw auf } (-\\infty;\\, ${x2}), \\text{ smf auf } (${x2};\\, +\\infty)`;
-  const wrongMono3 = `f \\text{ smw auf } (${x1};\\, ${x2}), \\text{ smf sonst}`;
+  // Monotonie intervals MC — Klartext mit Unicode
+  const correctMonotonie = `smw auf (\u2212\u221e; ${x1}) und (${x2}; +\u221e), smf auf (${x1}; ${x2})`;
+  const wrongMono1 = `smf auf (\u2212\u221e; ${x1}) und (${x2}; +\u221e), smw auf (${x1}; ${x2})`;
+  const wrongMono2 = `smw auf (\u2212\u221e; ${x2}), smf auf (${x2}; +\u221e)`;
+  const wrongMono3 = `smw auf (${x1}; ${x2}), smf sonst`;
 
   const monoOptions = [correctMonotonie, wrongMono1, wrongMono2, wrongMono3];
   const monoObjs = monoOptions.map((opt, i) => ({ text: opt, idx: i }));
