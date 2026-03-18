@@ -472,10 +472,30 @@ function genA3Free(): StepByStepExercise {
     { a: x2, b: '+\\infty', testX: x2 + 2, isSmw: true },
   ];
   const chosen = pick(intervals);
-  const intervalLabel = `[${chosen.a};\\, ${chosen.b}]`;
+  const intervalLabel = `(${chosen.a};\\, ${chosen.b})`;
   const monoResult = chosen.isSmw ? 'smw' : 'smf';
   const testVal = chosen.testX;
   const fPrimeAtTest = evalPoly(fPrimeCoeffs, testVal);
+
+  // Testwert-Auswahl: 1 gültiger + 3 ungültige (NS von f' oder außerhalb)
+  const validTest = testVal;
+  const invalidTests: number[] = [];
+  // Die NS von f' selbst sind ungültig (liegen auf dem Rand, nicht IM Intervall)
+  invalidTests.push(x1);
+  invalidTests.push(x2);
+  // Ein Wert außerhalb des Intervalls
+  if (chosen.a === '-\\infty') {
+    invalidTests.push(x2 + 2); // rechts vom Intervall
+  } else if (chosen.b === '+\\infty') {
+    invalidTests.push(x1 - 2); // links vom Intervall
+  } else {
+    invalidTests.push(x1 - 2); // links vom ganzen Bereich
+  }
+  // Deduplizieren und auf 3 beschränken
+  const uniqueInvalid = [...new Set(invalidTests)].filter(v => v !== validTest).slice(0, 3);
+  const testOptions = [validTest, ...uniqueInvalid].map((v, i) => ({ v, i }));
+  shuffle(testOptions);
+  const correctTestIdx = testOptions.findIndex(o => o.i === 0);
 
   return {
     id: uid(),
@@ -503,10 +523,18 @@ function genA3Free(): StepByStepExercise {
         explanation: `\\(${fPrimeLatex}\\). Nullstellen: \\(x_1 = ${x1}\\), \\(x_2 = ${x2}\\). Beide liegen nicht im Intervall \\(${intervalLabel}\\), also hat \\(f'\\) dort konstantes Vorzeichen.`,
       },
       {
-        instruction: `Berechne \\(f'(${testVal})\\) als Testwert im Intervall.`,
+        instruction: `Welcher Wert eignet sich als Testwert im Intervall \\(${intervalLabel}\\)?`,
+        inputType: 'multiple-choice',
+        options: testOptions.map(o => `x = ${o.v}`),
+        correctAnswer: correctTestIdx,
+        hint: `Der Testwert muss im offenen Intervall \\(${intervalLabel}\\) liegen — also zwischen den Grenzen, nicht auf einer Nullstelle von \\(f'\\).`,
+        explanation: `\\(x = ${validTest}\\) liegt im Intervall \\(${intervalLabel}\\). Die Nullstellen \\(x = ${x1}\\) und \\(x = ${x2}\\) liegen auf dem Rand bzw. außerhalb.`,
+      },
+      {
+        instruction: `Berechne \\(f'(${testVal})\\).`,
         inputType: 'number',
         correctAnswer: fPrimeAtTest,
-        hint: `Setze \\(x = ${testVal}\\) in \\(f'(x)\\) ein.`,
+        hint: `Setze \\(x = ${testVal}\\) in \\(f'(x) = ${formatPolynomial(fPrimeCoeffs)}\\) ein.`,
         explanation: `\\(f'(${testVal}) = ${fPrimeAtTest}\\).`,
       },
       {
