@@ -8,7 +8,7 @@ import { renderReverseInference } from '../exercises/reverse-inference.js';
 import { renderStepByStep } from '../exercises/step-by-step.js';
 import { renderFreeMode } from '../exercises/free-mode.js';
 import { renderContextInterpretation } from '../exercises/context-interpretation.js';
-import { renderGraphSketch } from '../exercises/graph-sketch.js';
+
 import { renderContradictionArgument } from '../exercises/contradiction-argument.js';
 import { renderTransformationReasoning } from '../exercises/transformation-reasoning.js';
 import { generateRandomExercise } from '../generators/registry.js';
@@ -297,8 +297,6 @@ function renderExerciseByType(
         : renderStepByStep(container, exercise, onComplete);
     case 'context-interpretation':
       return renderContextInterpretation(container, exercise, onComplete);
-    case 'graph-sketch':
-      return renderGraphSketch(container, exercise, onComplete);
     case 'contradiction-argument':
       return renderContradictionArgument(container, exercise, onComplete);
     case 'transformation-reasoning':

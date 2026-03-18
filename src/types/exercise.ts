@@ -10,7 +10,6 @@ export type ExerciseType =
   | 'criteria-quiz'
   | 'step-by-step'
   | 'context-interpretation'
-  | 'graph-sketch'
   | 'contradiction-argument'
   | 'transformation-reasoning';
 
@@ -148,17 +147,6 @@ export interface ContextInterpretationExercise extends BaseExercise {
   highlightPoints?: Array<{ x: number; y: number; label: string }>;
 }
 
-export interface GraphSketchExercise extends BaseExercise {
-  type: 'graph-sketch';
-  conditions: string[];
-  graphOptions: Array<{
-    id: string;
-    function: FunctionDef;
-    isCorrect: boolean;
-  }>;
-  explanation: string;
-}
-
 export interface ContradictionArgumentExercise extends BaseExercise {
   type: 'contradiction-argument';
   shownGraph: FunctionDef;
@@ -193,6 +181,5 @@ export type Exercise =
   | CriteriaQuizExercise
   | StepByStepExercise
   | ContextInterpretationExercise
-  | GraphSketchExercise
   | ContradictionArgumentExercise
   | TransformationReasoningExercise;

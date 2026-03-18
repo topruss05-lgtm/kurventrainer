@@ -6,7 +6,7 @@ export const MODULE_CONFIGS: ModuleConfig[] = [
     title: 'Monotonie',
     description: 'Zusammenhang zwischen f\' und dem Steigungsverhalten von f',
     order: 1,
-    exerciseTypes: ['identify-points', 'true-false', 'reverse-inference', 'criteria-quiz', 'step-by-step', 'context-interpretation', 'graph-sketch'],
+    exerciseTypes: ['identify-points', 'true-false', 'reverse-inference', 'criteria-quiz', 'step-by-step', 'context-interpretation'],
     competencyLevels: ['K1', 'K2', 'K3', 'K4', 'K5'],
   },
   {
@@ -38,7 +38,7 @@ export const MODULE_CONFIGS: ModuleConfig[] = [
     title: 'Kurvendiskussion',
     description: 'Vollständige Untersuchung: Nullstellen, Extrema, Wendepunkte, Skizze',
     order: 5,
-    exerciseTypes: ['step-by-step', 'graph-sketch', 'contradiction-argument'],
+    exerciseTypes: ['step-by-step', 'contradiction-argument'],
     competencyLevels: ['K3', 'K4', 'K5'],
   },
   {

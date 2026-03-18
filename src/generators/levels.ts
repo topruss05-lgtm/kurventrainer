@@ -12,7 +12,6 @@ import { GRAPH_ASSIGNMENT_CASES } from './gen-graph-assignment.js';
 import { TF_MONOTONIE_CASES } from './gen-tf-monotonie.js';
 import { TF_EXTREMSTELLEN_CASES } from './gen-tf-extremstellen.js';
 import { TF_WENDESTELLEN_CASES } from './gen-tf-wendestellen.js';
-import { GRAPH_SKETCH_CASES } from './gen-graph-sketch.js';
 import { CONTEXT_CASES } from './gen-context.js';
 
 export interface LevelConfig {
@@ -27,7 +26,6 @@ const LEVELS: LevelConfig[] = [
   { moduleId: 'monotonie', exerciseType: 'step-by-step', cases: MONOTONIE_STEP_CASES },
   { moduleId: 'monotonie', exerciseType: 'true-false', cases: TF_MONOTONIE_CASES },
   { moduleId: 'monotonie', exerciseType: 'reverse-inference', cases: REVERSE_INFERENCE_CASES },
-  { moduleId: 'monotonie', exerciseType: 'graph-sketch', cases: GRAPH_SKETCH_CASES.filter(c => c.id === 'sketch-monotonie') },
 
   // ─── Extremstellen ───
   { moduleId: 'extremstellen', exerciseType: 'identify-points', cases: EXTREMA_IDENTIFY_CASES },
@@ -44,7 +42,6 @@ const LEVELS: LevelConfig[] = [
 
   // ─── Kurvendiskussion ───
   { moduleId: 'kurvendiskussion', exerciseType: 'step-by-step', cases: KURVENDISKUSSION_STEP_CASES },
-  { moduleId: 'kurvendiskussion', exerciseType: 'graph-sketch', cases: GRAPH_SKETCH_CASES.filter(c => c.id !== 'sketch-monotonie') },
 
   // ─── Sachkontext ───
   { moduleId: 'sachkontext', exerciseType: 'context-interpretation', cases: CONTEXT_CASES },

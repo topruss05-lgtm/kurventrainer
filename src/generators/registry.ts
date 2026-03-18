@@ -12,7 +12,6 @@ import { graphAssignmentGenerator } from './gen-graph-assignment.js';
 import { tfMonotonieGenerator } from './gen-tf-monotonie.js';
 import { tfExtremstellenGenerator } from './gen-tf-extremstellen.js';
 import { tfWendestellenGenerator } from './gen-tf-wendestellen.js';
-import { graphSketchGenerator } from './gen-graph-sketch.js';
 import { contextGenerator } from './gen-context.js';
 import { getExercisesByModule } from '../data/exercise-loader.js';
 
@@ -21,7 +20,7 @@ const GENERATORS: Partial<Record<ModuleId, ExerciseGenerator[]>> = {
   extremstellen: [extremstellenGenerator, extremaIdentifyGenerator, tfExtremstellenGenerator, reverseInferenceGenerator],
   wendestellen: [wendestellenGenerator, wendepunkteIdentifyGenerator, tfWendestellenGenerator],
   zusammenhang: [graphAssignmentGenerator],
-  kurvendiskussion: [kurvendiskussionStepGenerator, graphSketchGenerator],
+  kurvendiskussion: [kurvendiskussionStepGenerator],
   sachkontext: [contextGenerator],
 };
 

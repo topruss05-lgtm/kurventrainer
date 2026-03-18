@@ -9,7 +9,6 @@ import { stepExtremstellenExercises } from './exercises-step-extremstellen.js';
 import { stepWendestellenExercises } from './exercises-step-wendestellen.js';
 import { sachkontextExercises } from './exercises-sachkontext.js';
 import { kurvendiskussionExercises } from './exercises-kurvendiskussion.js';
-import { graphSketchExercises } from './exercises-graph-sketch.js';
 import { contradictionExercises } from './exercises-contradiction.js';
 import { transformationExercises } from './exercises-transformation.js';
 import { remainingExercises } from './exercises-remaining.js';
@@ -24,7 +23,6 @@ const ALL_EXERCISES: Exercise[] = [
   ...stepWendestellenExercises,
   ...sachkontextExercises,
   ...kurvendiskussionExercises,
-  ...graphSketchExercises,
   ...contradictionExercises,
   ...transformationExercises,
   ...remainingExercises,
