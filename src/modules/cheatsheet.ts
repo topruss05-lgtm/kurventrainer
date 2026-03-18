@@ -546,12 +546,17 @@ const WZONE_COLORS: Record<string, string> = {
 
 // ── Monotonie + Extremstellen section ───────────────────────────────
 
+interface SectionResult {
+  boards: CanvasBoard[];
+  ctrl?: SectionCtrl;
+}
+
 function buildMonotonieExtremstellenSection(
   _container: HTMLElement,
   graphContainer: HTMLElement,
   rulesContainer: HTMLElement,
   nachweisContainer: HTMLElement,
-): CanvasBoard[] {
+): SectionResult {
   const f = (x: number) => 3*x**5/64 - 5*x**3/16;
   const f1 = (x: number) => 15*x**4/64 - 15*x**2/16;
   const cleanups: (() => void)[] = [];
@@ -846,7 +851,7 @@ function buildMonotonieExtremstellenSection(
   attachHover(boardF, cleanups, onMove, onLeave);
   withCleanup(boardF, cleanups);
 
-  return [boardF, boardF1];
+  return { boards: [boardF, boardF1], ctrl };
 }
 
 // ── Wendestellen + Kruemmung section ────────────────────────────────
@@ -856,7 +861,7 @@ function buildWendestellenSection(
   graphContainer: HTMLElement,
   rulesContainer: HTMLElement,
   nachweisContainer: HTMLElement,
-): CanvasBoard[] {
+): SectionResult {
   const f = (x: number) => x**3 - 3*x**2 + 2;
   const f1 = (x: number) => 3*x**2 - 6*x;
   const f2 = (x: number) => 6*x - 6;
@@ -1083,7 +1088,7 @@ function buildWendestellenSection(
   attachHover(boardF, cleanups, onMove, onLeave);
   withCleanup(boardF, cleanups);
 
-  return [boardF, boardF1, boardF2];
+  return { boards: [boardF, boardF1, boardF2] };
 }
 
 // ── Section layout helper ───────────────────────────────────────────
@@ -1097,8 +1102,8 @@ function buildSectionLayout(
     graphCard: HTMLElement,
     rulesDiv: HTMLElement,
     nachweisDiv: HTMLElement,
-  ) => CanvasBoard[],
-): CanvasBoard[] {
+  ) => SectionResult,
+): SectionResult {
   const sectionEl = document.createElement('section');
   sectionEl.className = 'animate-slide-up';
   sectionEl.style.cssText = 'margin-bottom: 0;';
@@ -1124,7 +1129,7 @@ function buildSectionLayout(
   const nachweisDiv = document.createElement('div');
   nachweisDiv.style.cssText = 'margin-top: 1.25rem;';
 
-  const boards = buildFn(container, graphCard, rulesDiv, nachweisDiv);
+  const result = buildFn(container, graphCard, rulesDiv, nachweisDiv);
 
   grid.appendChild(graphCard);
   grid.appendChild(rulesDiv);
@@ -1132,7 +1137,7 @@ function buildSectionLayout(
   sectionEl.appendChild(nachweisDiv);
   container.appendChild(sectionEl);
 
-  return boards;
+  return result;
 }
 
 // ── Render ───────────────────────────────────────────────────────────
@@ -1166,7 +1171,9 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   container.append(backBtn, header);
 
   // ─ Section 1: Monotonie & Extremstellen ─
-  boards.push(...buildSectionLayout(container, 'Monotonie & Extremstellen', null, buildMonotonieExtremstellenSection));
+  const sec1 = buildSectionLayout(container, 'Monotonie & Extremstellen', null, buildMonotonieExtremstellenSection);
+  boards.push(...sec1.boards);
+  const monoCtrl = sec1.ctrl!;
 
   // ─ Divider ─
   const divider = document.createElement('hr');
@@ -1174,7 +1181,91 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   container.appendChild(divider);
 
   // ─ Section 2: Wendestellen & Kruemmung ─
-  boards.push(...buildSectionLayout(container, 'Wendestellen & Kr\u00fcmmung', '60ms', buildWendestellenSection));
+  const sec2 = buildSectionLayout(container, 'Wendestellen & Kr\u00fcmmung', '60ms', buildWendestellenSection);
+  boards.push(...sec2.boards);
 
-  return () => { boards.forEach(destroyBoard); };
+  // ─ Voiceover player ─
+  const audio = new Audio('/audio/voiceover-monotonie.mp3');
+  const timeline: { time: number; action: () => void }[] = [
+    { time: 0.0,  action: () => monoCtrl.clearAll() },
+    { time: 6.3,  action: () => monoCtrl.onCardClick('steigend') },
+    { time: 19.2, action: () => monoCtrl.onCardClick('fallend') },
+    { time: 30.8, action: () => monoCtrl.onCardClick('hp') },
+    { time: 44.9, action: () => monoCtrl.onCardClick('tp') },
+    { time: 57.5, action: () => monoCtrl.onCardClick('sp') },
+    { time: 77.0, action: () => { monoCtrl.clearAll(); highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'hp'); } },
+    { time: 82.5, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'tp'); } },
+    { time: 86.0, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'sp'); } },
+    { time: 92.3, action: () => monoCtrl.clearAll() },
+  ];
+
+  let cueIndex = 0;
+  let rafId = 0;
+  function tick(): void {
+    const t = audio.currentTime;
+    while (cueIndex < timeline.length && t >= timeline[cueIndex].time) {
+      timeline[cueIndex].action();
+      cueIndex++;
+    }
+    if (!audio.paused) rafId = requestAnimationFrame(tick);
+  }
+
+  // Play button
+  const playBtn = document.createElement('button');
+  playBtn.style.cssText = `
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1.1rem; border: 1.5px solid var(--color-border);
+    border-radius: 999px; background: var(--color-surface);
+    color: var(--color-ink); font: 600 0.85rem/1 var(--font-body);
+    cursor: pointer; transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  `;
+  playBtn.innerHTML = '<span style="font-size:1.1rem">&#9654;</span> Erkl\u00e4rung abspielen';
+  playBtn.addEventListener('mouseenter', () => {
+    playBtn.style.borderColor = 'var(--color-primary)';
+    playBtn.style.color = 'var(--color-primary)';
+  });
+  playBtn.addEventListener('mouseleave', () => {
+    if (audio.paused) {
+      playBtn.style.borderColor = 'var(--color-border)';
+      playBtn.style.color = 'var(--color-ink)';
+    }
+  });
+
+  function startPlayback(): void {
+    cueIndex = 0;
+    audio.currentTime = 0;
+    audio.play();
+    playBtn.innerHTML = '<span style="font-size:1.1rem">&#9724;</span> Stopp';
+    playBtn.style.borderColor = 'var(--color-primary)';
+    playBtn.style.color = 'var(--color-primary)';
+    rafId = requestAnimationFrame(tick);
+  }
+  function stopPlayback(): void {
+    audio.pause();
+    audio.currentTime = 0;
+    cancelAnimationFrame(rafId);
+    monoCtrl.clearAll();
+    playBtn.innerHTML = '<span style="font-size:1.1rem">&#9654;</span> Erkl\u00e4rung abspielen';
+    playBtn.style.borderColor = 'var(--color-border)';
+    playBtn.style.color = 'var(--color-ink)';
+  }
+
+  playBtn.addEventListener('click', () => {
+    audio.paused ? startPlayback() : stopPlayback();
+  });
+  audio.addEventListener('ended', stopPlayback);
+
+  // Stop voiceover when student manually interacts with cards/graph
+  container.addEventListener('pointerdown', (e) => {
+    if (audio.paused || playBtn.contains(e.target as Node)) return;
+    stopPlayback();
+  });
+
+  hint.after(playBtn);
+
+  return () => {
+    stopPlayback();
+    boards.forEach(destroyBoard);
+  };
 }
