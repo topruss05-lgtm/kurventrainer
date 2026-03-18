@@ -161,7 +161,7 @@ export function renderStepByStep(
               btn.style.backgroundColor = 'var(--color-error-bg)';
               showIncorrectFeedback(feedbackArea);
               hintArea.classList.remove('hidden');
-              hintArea.textContent = step.hint;
+              renderMixedContent(hintArea, step.hint);
 
               setTimeout(() => {
                 allBtns.forEach(b => {
@@ -225,7 +225,7 @@ export function renderStepByStep(
             input.style.borderColor = 'var(--color-error)';
             showIncorrectFeedback(feedbackArea);
             hintArea.classList.remove('hidden');
-            hintArea.textContent = step.hint;
+            renderMixedContent(hintArea, step.hint);
 
             setTimeout(() => {
               input.value = '';
@@ -323,7 +323,7 @@ export function renderStepByStep(
             });
             showIncorrectFeedback(feedbackArea);
             hintArea.classList.remove('hidden');
-            hintArea.textContent = step.hint;
+            renderMixedContent(hintArea, step.hint);
 
             setTimeout(() => {
               inputs.forEach(inp => {
@@ -372,7 +372,7 @@ export function renderStepByStep(
               btn.style.backgroundColor = 'var(--color-error-bg)';
               showIncorrectFeedback(feedbackArea);
               hintArea.classList.remove('hidden');
-              hintArea.textContent = step.hint;
+              renderMixedContent(hintArea, step.hint);
 
               setTimeout(() => {
                 allBtns.forEach(b => {
@@ -456,7 +456,7 @@ export function renderStepByStep(
               : 'var(--color-error)';
             showIncorrectFeedback(feedbackArea);
             hintArea.classList.remove('hidden');
-            hintArea.textContent = step.hint;
+            renderMixedContent(hintArea, step.hint);
 
             setTimeout(() => {
               xInput.value = '';
@@ -491,7 +491,7 @@ export function renderStepByStep(
     el.textContent = '';
     const div = document.createElement('div');
     div.className = 'feedback-correct animate-fade-in mt-2 text-sm';
-    div.textContent = 'Richtig! ' + explanation;
+    renderMixedContent(div, 'Richtig! ' + explanation);
     el.appendChild(div);
   }
 
@@ -521,7 +521,7 @@ export function renderStepByStep(
 
       const left = document.createElement('span');
       left.className = 'text-sm';
-      left.textContent = step.instruction;
+      renderMixedContent(left, step.instruction);
 
       const right = document.createElement('span');
       right.className = 'text-sm font-semibold';
