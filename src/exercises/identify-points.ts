@@ -376,10 +376,11 @@ function renderTwoPhaseIntervalExercise(
     const p2Feedback = document.createElement('div');
     p2Feedback.className = 'hidden';
 
+    let p2Attempts = 0;
+
     p2Submit.addEventListener('click', () => {
       if (phase2Answered) return;
       if (selections.some(s => !s.type)) return;
-      phase2Answered = true;
 
       const studentAnswers: MonotonicityInterval[] = selections.map(s => ({
         from: typeof s.from === 'string' ? s.from as '-\u221e' : s.from,
@@ -388,44 +389,72 @@ function renderTwoPhaseIntervalExercise(
       }));
 
       const allCorrect = compareIntervalSets(studentAnswers, correct);
-      recordResult(exercise.module, exercise.id, isCorrect && allCorrect);
-
-      rowsContainer.querySelectorAll('button').forEach(b => {
-        (b as HTMLElement).style.cursor = 'default';
-        (b as HTMLElement).style.pointerEvents = 'none';
-      });
-
-      for (const el of bandElements) board.removeElement(el);
-      bandElements.length = 0;
-      for (const iv of correct) {
-        const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
-        const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
-        const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
-        const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
-        board.addElement(band);
-        bandElements.push(band);
-      }
-      board.update();
+      p2Attempts++;
 
       p2Feedback.classList.remove('hidden');
+
       if (allCorrect) {
+        phase2Answered = true;
+        recordResult(exercise.module, exercise.id, isCorrect);
+
+        rowsContainer.querySelectorAll('button').forEach(b => {
+          (b as HTMLElement).style.cursor = 'default';
+          (b as HTMLElement).style.pointerEvents = 'none';
+        });
+
+        for (const el of bandElements) board.removeElement(el);
+        bandElements.length = 0;
+        for (const iv of correct) {
+          const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
+          const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
+          const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+          const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
+          board.addElement(band);
+          bandElements.push(band);
+        }
+        board.update();
+
         p2Feedback.className = 'feedback-correct animate-fade-in';
         p2Feedback.textContent = 'Richtig! ' + exercise.feedbackExplanation;
+        p2Submit.classList.add('hidden');
+
+        if (isCorrect && exercise.strictFollowUp) {
+          renderStrictFollowUp(container, exercise, onComplete);
+          return;
+        }
+        onComplete();
+      } else if (p2Attempts === 1) {
+        p2Feedback.className = 'feedback-incorrect animate-fade-in';
+        p2Feedback.textContent = 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).';
       } else {
+        phase2Answered = true;
+        recordResult(exercise.module, exercise.id, false);
+
+        rowsContainer.querySelectorAll('button').forEach(b => {
+          (b as HTMLElement).style.cursor = 'default';
+          (b as HTMLElement).style.pointerEvents = 'none';
+        });
+
+        for (const el of bandElements) board.removeElement(el);
+        bandElements.length = 0;
+        for (const iv of correct) {
+          const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
+          const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
+          const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+          const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
+          board.addElement(band);
+          bandElements.push(band);
+        }
+        board.update();
+
         p2Feedback.className = 'feedback-incorrect animate-fade-in';
         const correctStr = correct.map(iv =>
           `(${formatBound(iv.from)}, ${formatBound(iv.to)}) ${iv.type === 'smw' ? 'steigend' : 'fallend'}`,
         ).join(' | ');
-        p2Feedback.textContent = `Nicht ganz. Richtig: ${correctStr}. ` + exercise.feedbackExplanation;
+        p2Feedback.textContent = `L\u00f6sung: ${correctStr}. ` + exercise.feedbackExplanation;
+        p2Submit.classList.add('hidden');
+        onComplete();
       }
-
-      p2Submit.classList.add('hidden');
-
-      if (allCorrect && isCorrect && exercise.strictFollowUp) {
-        renderStrictFollowUp(container, exercise, onComplete);
-        return;
-      }
-      onComplete();
     });
 
     phase2.append(rowsContainer, p2Submit, p2Feedback);
@@ -570,13 +599,11 @@ function renderClassifyIntervalExercise(
   const feedbackDiv = document.createElement('div');
   feedbackDiv.className = 'hidden';
 
+  let attempts = 0;
+
   submitBtn.addEventListener('click', () => {
     if (answered) return;
-
-    // All intervals must have a selection
     if (selections.some(s => !s.type)) return;
-
-    answered = true;
 
     const studentAnswers: MonotonicityInterval[] = selections.map(s => ({
       from: typeof s.from === 'string' ? s.from as '-\u221e' : s.from,
@@ -585,16 +612,46 @@ function renderClassifyIntervalExercise(
     }));
 
     const isCorrect = compareIntervalSets(studentAnswers, correct);
-    recordResult(exercise.module, exercise.id, isCorrect);
+    attempts++;
 
-    // Disable all buttons
-    rowsContainer.querySelectorAll('button').forEach(b => {
-      (b as HTMLElement).style.cursor = 'default';
-      (b as HTMLElement).style.pointerEvents = 'none';
-    });
+    feedbackDiv.classList.remove('hidden');
 
-    // Show correct colors
-    if (!isCorrect) {
+    if (isCorrect) {
+      answered = true;
+      recordResult(exercise.module, exercise.id, true);
+
+      rowsContainer.querySelectorAll('button').forEach(b => {
+        (b as HTMLElement).style.cursor = 'default';
+        (b as HTMLElement).style.pointerEvents = 'none';
+      });
+
+      for (const el of bandElements) board.removeElement(el);
+      bandElements.length = 0;
+      for (const iv of correct) {
+        const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
+        const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
+        const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+        const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
+        board.addElement(band);
+        bandElements.push(band);
+      }
+      board.update();
+
+      feedbackDiv.className = 'feedback-correct animate-fade-in';
+      feedbackDiv.textContent = 'Richtig! ' + exercise.feedbackExplanation;
+      submitBtn.classList.add('hidden');
+
+      if (exercise.strictFollowUp) {
+        renderStrictFollowUp(container, exercise, onComplete);
+        return;
+      }
+      onComplete();
+    } else if (attempts === 1) {
+      // Erster Fehler: Tipp geben, nochmal probieren lassen
+      feedbackDiv.className = 'feedback-incorrect animate-fade-in';
+      feedbackDiv.textContent = 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).';
+
+      // Falsche Intervalle rot markieren, dann nach kurzer Pause Reset
       selections.forEach((sel, idx) => {
         const correctIv = correct[idx];
         if (correctIv && sel.type !== correctIv.type) {
@@ -602,41 +659,42 @@ function renderClassifyIntervalExercise(
           row.style.borderColor = 'var(--color-error-border)';
         }
       });
-    }
 
-    // Update graph to show correct
-    for (const el of bandElements) board.removeElement(el);
-    bandElements.length = 0;
-    for (const iv of correct) {
-      const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
-      const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
-      const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
-      const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
-      board.addElement(band);
-      bandElements.push(band);
-    }
-    board.update();
-
-    feedbackDiv.classList.remove('hidden');
-    if (isCorrect) {
-      feedbackDiv.className = 'feedback-correct animate-fade-in';
-      feedbackDiv.textContent = 'Richtig! ' + exercise.feedbackExplanation;
+      setTimeout(() => {
+        for (let idx = 0; idx < rowsContainer.children.length; idx++) {
+          (rowsContainer.children[idx] as HTMLElement).style.borderColor = 'var(--color-border)';
+        }
+      }, 1500);
     } else {
+      // Zweiter Fehler: L\u00f6sung zeigen
+      answered = true;
+      recordResult(exercise.module, exercise.id, false);
+
+      rowsContainer.querySelectorAll('button').forEach(b => {
+        (b as HTMLElement).style.cursor = 'default';
+        (b as HTMLElement).style.pointerEvents = 'none';
+      });
+
+      for (const el of bandElements) board.removeElement(el);
+      bandElements.length = 0;
+      for (const iv of correct) {
+        const xFrom = iv.from === '-\u221e' ? bb[0] : iv.from as number;
+        const xTo = iv.to === '+\u221e' ? bb[2] : iv.to as number;
+        const color = iv.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+        const band = createIntervalBand(xFrom, xTo, { color, opacity: 0.2 });
+        board.addElement(band);
+        bandElements.push(band);
+      }
+      board.update();
+
       feedbackDiv.className = 'feedback-incorrect animate-fade-in';
       const correctStr = correct.map(iv =>
         `(${formatBound(iv.from)}, ${formatBound(iv.to)}) ${iv.type === 'smw' ? 'steigend' : 'fallend'}`,
       ).join(' | ');
-      feedbackDiv.textContent = `Nicht ganz. Richtig: ${correctStr}. ` + exercise.feedbackExplanation;
+      feedbackDiv.textContent = `L\u00f6sung: ${correctStr}. ` + exercise.feedbackExplanation;
+      submitBtn.classList.add('hidden');
+      onComplete();
     }
-
-    submitBtn.classList.add('hidden');
-
-    if (isCorrect && exercise.strictFollowUp) {
-      renderStrictFollowUp(container, exercise, onComplete);
-      return;
-    }
-
-    onComplete();
   });
 
   container.append(rowsContainer, submitBtn, feedbackDiv);
