@@ -539,9 +539,14 @@ function renderLevelMode(
     const caseId = currentCase.id;
     const caseMode = currentCase.mode;
 
-    const onComplete = () => {
-      markCaseCompleted(moduleId, exerciseType, caseId);
-      updateProgress();
+    const onComplete = (correct = true) => {
+      if (correct) {
+        markCaseCompleted(moduleId, exerciseType, caseId);
+        updateProgress();
+      } else {
+        // Falsch → gleichen Case nochmal in die Queue (neue Zufallswerte)
+        queue.splice(queueIndex, 0, currentCase!);
+      }
       nextBtn.style.display = 'block';
     };
 

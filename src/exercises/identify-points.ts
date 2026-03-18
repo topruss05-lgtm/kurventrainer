@@ -455,7 +455,7 @@ function renderTwoPhaseIntervalExercise(
         ).join(' | ');
         p2Feedback.textContent = `L\u00f6sung: ${correctStr}. ` + exercise.feedbackExplanation;
         p2Submit.classList.add('hidden');
-        onComplete();
+        (onComplete as (correct?: boolean) => void)(false);
       }
     });
 
@@ -655,19 +655,39 @@ function renderClassifyIntervalExercise(
           ? 'Nicht ganz. Tipp: Schau wo der Graph \u00fcber der x-Achse liegt (positiv \u2192 f steigt) und wo darunter (negativ \u2192 f f\u00e4llt).'
           : 'Nicht ganz. Tipp: Schau ob die Kurve nach rechts oben geht (steigend) oder nach rechts unten (fallend).';
 
-      // Falsche Intervalle rot markieren, dann nach kurzer Pause Reset
+      // Richtige stehen lassen, falsche rot markieren + nach Pause resetten
       selections.forEach((sel, idx) => {
         const correctIv = correct[idx];
+        const row = rowsContainer.children[idx] as HTMLElement;
         if (correctIv && sel.type !== correctIv.type) {
-          const row = rowsContainer.children[idx] as HTMLElement;
           row.style.borderColor = 'var(--color-error-border)';
+        } else if (correctIv && sel.type === correctIv.type) {
+          row.style.borderColor = 'var(--color-success-border)';
+          // Richtige Buttons sperren
+          row.querySelectorAll('button').forEach(b => {
+            (b as HTMLElement).style.pointerEvents = 'none';
+          });
         }
       });
 
       setTimeout(() => {
-        for (let idx = 0; idx < rowsContainer.children.length; idx++) {
-          (rowsContainer.children[idx] as HTMLElement).style.borderColor = 'var(--color-border)';
-        }
+        selections.forEach((sel, idx) => {
+          const correctIv = correct[idx];
+          const row = rowsContainer.children[idx] as HTMLElement;
+          if (correctIv && sel.type !== correctIv.type) {
+            row.style.borderColor = 'var(--color-border)';
+            // Falsche Auswahl resetten
+            sel.type = null;
+            const btns = row.querySelectorAll('button');
+            btns.forEach(b => {
+              const el = b as HTMLElement;
+              el.style.borderColor = 'transparent';
+              el.style.backgroundColor = 'var(--color-surface-inset)';
+              el.style.color = 'var(--color-ink-muted)';
+            });
+          }
+        });
+        updateBands();
       }, 1500);
     } else {
       // Zweiter Fehler: L\u00f6sung zeigen
@@ -697,7 +717,7 @@ function renderClassifyIntervalExercise(
       ).join(' | ');
       feedbackDiv.textContent = `L\u00f6sung: ${correctStr}. ` + exercise.feedbackExplanation;
       submitBtn.classList.add('hidden');
-      onComplete();
+      (onComplete as (correct?: boolean) => void)(false);
     }
   });
 
