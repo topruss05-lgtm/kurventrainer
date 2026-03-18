@@ -70,6 +70,14 @@ export function getExerciseById(id: string): Exercise | undefined {
   return ALL_EXERCISES.find(e => e.id === id);
 }
 
+export function getExercisesByModule(moduleId: ModuleId): Exercise[] {
+  return ALL_EXERCISES.filter(e => e.module === moduleId);
+}
+
+export function getExerciseCountByType(moduleId: ModuleId, type: ExerciseType): number {
+  return ALL_EXERCISES.filter(e => e.module === moduleId && e.type === type).length;
+}
+
 export function getAllQuizIds(): string[] {
   return ALL_EXERCISES
     .filter(e => e.type === 'criteria-quiz')
