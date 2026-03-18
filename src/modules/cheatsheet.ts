@@ -2,6 +2,7 @@ import { navigate } from '../router.js';
 import { createBoard, destroyBoard, type CanvasBoard } from '../graph/board-factory.js';
 import { COLORS } from '../graph/function-plotter.js';
 import { createFunctionCurve, createLine, createPoint, createIntervalBand } from '../graph/canvas-renderer.js';
+import voiceoverTimestamps from '../voiceover-timestamps.json';
 
 // ── Style constants ─────────────────────────────────────────────────
 
@@ -1263,36 +1264,9 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   audio1.preload = 'auto';
 
   // ── Voiceover 1: Construction → Sweep → Walkthrough ──
-  // VTT timestamps (Edge TTS -10%):
-  //  0.0  "Das ist der Graph einer Funktion f."
-  //  3.0  "An jeder Stelle können wir eine Tangente anlegen..."
-  //  8.6  "Hier zum Beispiel ist die Steigung drei" → tangent x=-2.47, plot pt[0]
-  // 13.4  "Diesen Wert tragen wir als Punkt ein"
-  // 16.5  "Hier ist die Steigung minus eins" → tangent x=√2, plot pt[1]
-  // 20.4  "Und hier ist die Steigung Null" → tangent x=2, plot pt[2]
-  // 24.9  "Das können wir für jede Stelle machen" → SWEEP starts
-  // 27.9  "Was dabei entsteht..." → f' curve appears, label appears
-  // 36.8  "Gehen wir den Graphen von links nach rechts..." → WALKTHROUGH starts
-  // 43.8  smw zone
-  // 53.4  approaching HP
-  // 57.6  "Hier." → at HP
-  // 59.1  "f' ist Null — VZW" → past HP
-  // 70.2  "HP" shown
-  // 75.1  fallend zone
-  // 82.0  approaching SP
-  // 84.9  "f' ist Null" → at SP
-  // 87.1  "Kein VZW" → past SP, smf explanation
-  //100.3  "Und obwohl f' hier kurz Null war..." → smf callout visual
-  //105.8  "Die Funktion fällt weiter..."
-  //108.6  "f' ist Null — wechselt -→+" → at TP
-  //117.8  "TP" shown
-  //122.6  steigend zone
-  //126.7  "Also: VZW — Extremstelle"
-  //134.8  "Kein VZW — Sattelpunkt"
-  //137.6  "Probier es selbst aus"
+  // Timestamps loaded from voiceover-timestamps.json
+  const T = voiceoverTimestamps.monotonie;
 
-  const SWEEP_START = 24.9;
-  const SWEEP_END = 27.9;
   const SWEEP_X0 = -2.8;
   const SWEEP_X1 = 2.8;
   const constructionXPositions = [-2.47, Math.sqrt(2), 2];
@@ -1300,37 +1274,25 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   // Walkthrough motions: point travels across f during interpretation
   type Motion = { tStart: number; tEnd: number; xFrom: number; xTo: number };
   const walkMotions: Motion[] = [
-    // "Hier ist f' positiv — smw" (steigend zone)
-    { tStart: 43.8, tEnd: 53.4, xFrom: -2.8, xTo: -2.2 },
-    // "Steigung wird kleiner..." approaching HP
-    { tStart: 53.4, tEnd: 57.6, xFrom: -2.2, xTo: -2.0 },
-    // At HP, hold
-    { tStart: 57.6, tEnd: 59.1, xFrom: -2.0, xTo: -2.0 },
-    // Past HP — VZW, tangent flips
-    { tStart: 59.1, tEnd: 70.2, xFrom: -2.0, xTo: -1.6 },
-    // "f' negativ — smf"
-    { tStart: 75.1, tEnd: 82.0, xFrom: -1.6, xTo: -0.2 },
-    // Approaching SP
-    { tStart: 82.0, tEnd: 84.9, xFrom: -0.2, xTo: 0.0 },
-    // At SP, hold
-    { tStart: 84.9, tEnd: 87.1, xFrom: 0.0, xTo: 0.0 },
-    // Past SP — kein VZW, f' bleibt negativ + smf explanation
-    { tStart: 87.1, tEnd: 105.8, xFrom: 0.0, xTo: 0.5 },
-    // "Die Funktion fällt weiter..." → approaching TP
-    { tStart: 105.8, tEnd: 108.6, xFrom: 0.5, xTo: 2.0 },
-    // At TP, hold
-    { tStart: 108.6, tEnd: 112.0, xFrom: 2.0, xTo: 2.0 },
-    // Past TP — VZW -→+
-    { tStart: 112.0, tEnd: 122.6, xFrom: 2.0, xTo: 2.5 },
-    // "f' wieder positiv — steigt"
-    { tStart: 122.6, tEnd: 126.7, xFrom: 2.5, xTo: 2.8 },
+    { tStart: T.smw, tEnd: T.approachHP, xFrom: -2.8, xTo: -2.2 },
+    { tStart: T.approachHP, tEnd: T.atHP, xFrom: -2.2, xTo: -2.0 },
+    { tStart: T.atHP, tEnd: T.atHPvzw, xFrom: -2.0, xTo: -2.0 },
+    { tStart: T.atHPvzw, tEnd: T.hpName, xFrom: -2.0, xTo: -1.6 },
+    { tStart: T.smf, tEnd: T.approachSP, xFrom: -1.6, xTo: -0.2 },
+    { tStart: T.approachSP, tEnd: T.atSP, xFrom: -0.2, xTo: 0.0 },
+    { tStart: T.atSP, tEnd: T.noVZW, xFrom: 0.0, xTo: 0.0 },
+    { tStart: T.noVZW, tEnd: T.continuesFalling, xFrom: 0.0, xTo: 0.5 },
+    { tStart: T.continuesFalling, tEnd: T.atTP, xFrom: 0.5, xTo: 2.0 },
+    { tStart: T.atTP, tEnd: T.tpVZW, xFrom: 2.0, xTo: 2.0 },
+    { tStart: T.tpVZW, tEnd: T.steigendAgain, xFrom: 2.0, xTo: 2.5 },
+    { tStart: T.steigendAgain, tEnd: T.summary, xFrom: 2.5, xTo: 2.8 },
   ];
 
   function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
 
   const cues: { time: number; action: () => void }[] = [
     // ── PHASE 1: Init — only f graph ──
-    { time: 0.0, action: () => {
+    { time: T.intro, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
       h.hideGraphics();
@@ -1339,36 +1301,36 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       for (const el of h.f1Elements) el.visible = false;
       for (const pt of h.constructionPts) pt.visible = false;
     }},
-    // Show f'-board (empty axes only) when tangent concept is introduced
-    { time: 3.0, action: () => {
-      h.f1Label.style.display = 'none'; // no label yet
+    // Show f'-board (empty axes only)
+    { time: T.tangentIntro, action: () => {
+      h.f1Label.style.display = 'none';
       h.boardF1.canvas.style.display = '';
       h.boardF1.update();
     }},
     // Example 1: x=-2.47, m=3
-    { time: 8.6, action: () => {
+    { time: T.example1, action: () => {
       h.showAtX(-2.47);
       h.constructionPts[0].visible = true;
       h.boardF1.update();
     }},
     // Example 2: x=√2, m≈-1
-    { time: 16.5, action: () => {
+    { time: T.example2, action: () => {
       h.showAtX(Math.sqrt(2));
       h.constructionPts[1].visible = true;
       h.boardF1.update();
     }},
     // Example 3: x=2, m=0
-    { time: 20.4, action: () => {
+    { time: T.example3, action: () => {
       h.showAtX(2);
       h.constructionPts[2].visible = true;
       h.boardF1.update();
     }},
     // Hide tangent before sweep
-    { time: 24.0, action: () => {
+    { time: T.sweepIntro - 0.9, action: () => {
       h.hideGraphics();
     }},
     // ── PHASE 2: After sweep — f' curve + label appear ──
-    { time: 27.9, action: () => {
+    { time: T.sweepResult, action: () => {
       h.hideGraphics();
       for (const pt of h.constructionPts) pt.visible = false;
       for (const el of h.f1Elements) el.visible = true;
@@ -1377,61 +1339,49 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.boardF.update();
       h.boardF1.update();
     }},
-    // ── PHASE 3: Walkthrough ── (motions handle tangent position)
-    // "Hier ist f' positiv — smw"
-    { time: 43.8, action: () => {
+    // ── PHASE 3: Walkthrough ──
+    { time: T.smw, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
     }},
-    // Approaching HP — back to blank
-    { time: 53.4, action: () => {
+    { time: T.approachHP, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
     }},
-    // At HP — highlight HP
-    { time: 57.6, action: () => {
+    { time: T.atHP, action: () => {
       monoCtrl.highlightZone('hp');
     }},
-    // "f' negativ — smf"
-    { time: 75.1, action: () => {
+    { time: T.smf, action: () => {
       h.setGraphState('zone', 'fallend');
       monoCtrl.highlightZone('fallend');
     }},
-    // Approaching SP
-    { time: 82.0, action: () => {
+    { time: T.approachSP, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
     }},
-    // At SP — highlight SP + fallend
-    { time: 84.9, action: () => {
+    { time: T.atSP, action: () => {
       highlightCardsMulti(monoCtrl.cards, ['fallend', 'sp']);
     }},
-    // SP smf explanation (visual: fallend segments stay colored)
-    { time: 100.3, action: () => {
+    { time: T.smfException, action: () => {
       h.setGraphState('zone', 'fallend');
     }},
-    // Past SP smf done
-    { time: 105.8, action: () => {
+    { time: T.continuesFalling, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
     }},
-    // At TP — highlight TP
-    { time: 108.6, action: () => {
+    { time: T.atTP, action: () => {
       monoCtrl.highlightZone('tp');
     }},
-    // "f' wieder positiv — steigt"
-    { time: 122.6, action: () => {
+    { time: T.steigendAgain, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
     }},
-    // "Also: VZW — Extremstelle" — summary, hide tangent
-    { time: 126.7, action: () => {
+    { time: T.summary, action: () => {
       h.hideGraphics();
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
     }},
-    // Outro: reset
-    { time: 137.6, action: () => {
+    { time: T.outro, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
       for (const pt of h.constructionPts) pt.visible = false;
@@ -1452,11 +1402,10 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       cueIdx1++;
     }
     // Sweep: tangent travels across f, traces f' path
-    if (t >= SWEEP_START && t < SWEEP_END) {
-      const progress = (t - SWEEP_START) / (SWEEP_END - SWEEP_START);
+    if (t >= T.sweepIntro && t < T.sweepResult) {
+      const progress = (t - T.sweepIntro) / (T.sweepResult - T.sweepIntro);
       const mx = lerp(SWEEP_X0, SWEEP_X1, progress);
       h.showAtX(mx);
-      // Hide construction pts as sweep dot passes
       for (let i = 0; i < h.constructionPts.length; i++) {
         if (h.constructionPts[i].visible && mx > constructionXPositions[i] + 0.3) {
           h.constructionPts[i].visible = false;
@@ -1534,21 +1483,15 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   nBtn.addEventListener('mouseenter', () => { nBtn.style.cssText = nBtnStyle + nBtnHover; });
   nBtn.addEventListener('mouseleave', () => { if (audio2.paused) nBtn.style.cssText = nBtnStyle; });
 
+  const T2 = voiceoverTimestamps.nachweis;
   const cues2: { time: number; action: () => void }[] = [
-    // HP: f' fällt
-    { time: 0.0, action: () => { monoCtrl.clearAll(); monoCtrl.onCardClick('hp'); } },
-    // Nachweis HP highlight
-    { time: 20.9, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'hp'); } },
-    // TP: f' steigt
-    { time: 25.7, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); monoCtrl.onCardClick('tp'); } },
-    // Nachweis TP highlight
-    { time: 32.1, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'tp'); } },
-    // SP
-    { time: 36.9, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); monoCtrl.onCardClick('sp'); } },
-    // Nachweis SP highlight
-    { time: 44.5, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'sp'); } },
-    // End
-    { time: 50.0, action: () => monoCtrl.clearAll() },
+    { time: T2.intro, action: () => { monoCtrl.clearAll(); monoCtrl.onCardClick('hp'); } },
+    { time: T2.hpSummary, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'hp'); } },
+    { time: T2.tpIntro, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); monoCtrl.onCardClick('tp'); } },
+    { time: T2.tpSummary, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'tp'); } },
+    { time: T2.spIntro, action: () => { clearNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones); monoCtrl.onCardClick('sp'); } },
+    { time: T2.spConclusion, action: () => { highlightNachweisColumns(monoCtrl.nachweisColumns, monoCtrl.nachweisZones, 'sp'); } },
+    { time: T2.spFallback + 4, action: () => monoCtrl.clearAll() },
   ];
 
   let cueIdx2 = 0;
