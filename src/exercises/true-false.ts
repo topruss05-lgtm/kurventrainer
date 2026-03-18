@@ -2,6 +2,7 @@ import type { TrueFalseExercise } from '../types/exercise.js';
 import { recordResult } from '../progress/storage.js';
 import { createBoard, destroyBoard, calcBoundingBox } from '../graph/board-factory.js';
 import { plotFunction, highlightPoint, COLORS } from '../graph/function-plotter.js';
+import { renderMixedContent } from '../render-latex.js';
 
 export function renderTrueFalse(
   container: HTMLElement,
@@ -23,7 +24,7 @@ export function renderTrueFalse(
 
   const statementText = document.createElement('p');
   statementText.className = 'font-medium text-lg';
-  statementText.textContent = exercise.statement;
+  renderMixedContent(statementText, exercise.statement);
   statementEl.appendChild(statementText);
 
   const btnRow = document.createElement('div');
@@ -103,7 +104,7 @@ export function renderTrueFalse(
           btn.style.backgroundColor = '';
         }
       });
-      btn.textContent = reason;
+      renderMixedContent(btn, reason);
       btn.addEventListener('click', () => handleReasonChoice(displayIndex));
       reasonDiv.appendChild(btn);
     });
@@ -145,13 +146,13 @@ export function renderTrueFalse(
     feedbackDiv.classList.remove('hidden');
     if (allCorrect) {
       feedbackDiv.className = 'feedback-correct animate-fade-in';
-      feedbackDiv.textContent = 'Richtig! ' + exercise.feedbackExplanation;
+      renderMixedContent(feedbackDiv, 'Richtig! ' + exercise.feedbackExplanation);
     } else {
       feedbackDiv.className = 'feedback-incorrect animate-fade-in';
       const parts: string[] = [];
       if (!truthCorrect) parts.push(`Die Aussage ist ${exercise.correct ? 'wahr' : 'falsch'}.`);
-      if (!reasonCorrect) parts.push('Die Begründung war nicht korrekt.');
-      feedbackDiv.textContent = parts.join(' ') + ' ' + exercise.feedbackExplanation;
+      if (!reasonCorrect) parts.push('Die Begr\u00fcndung war nicht korrekt.');
+      renderMixedContent(feedbackDiv, parts.join(' ') + ' ' + exercise.feedbackExplanation);
     }
 
     onComplete();
