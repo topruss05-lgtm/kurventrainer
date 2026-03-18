@@ -245,94 +245,90 @@ export function renderStepByStep(
       }
 
       case 'number-set': {
-        const wrapper = document.createElement('div');
-        const inputsContainer = document.createElement('div');
-        inputsContainer.style.display = 'flex';
-        inputsContainer.style.flexDirection = 'column';
-        inputsContainer.style.gap = '8px';
+        const correctArr = step.correctAnswer as number[];
+        const tolerance = step.tolerance ?? 0.01;
+        const numFields = correctArr.length;
 
-        function addInput(): HTMLInputElement {
-          const row = document.createElement('div');
-          row.style.display = 'flex';
-          row.style.gap = '8px';
-          row.style.alignItems = 'center';
+        const fieldsContainer = document.createElement('div');
+        fieldsContainer.style.cssText = 'display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;';
+
+        const fieldInputs: HTMLInputElement[] = [];
+
+        for (let fi = 0; fi < numFields; fi++) {
+          const fieldWrap = document.createElement('div');
+          fieldWrap.style.cssText = 'display: flex; align-items: center; gap: 0.375rem; flex: 1; min-width: 5rem;';
+
+          const label = document.createElement('span');
+          label.style.cssText = 'font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; white-space: nowrap;';
+          if (numFields > 1) {
+            const labelSpan = document.createElement('span');
+            renderMixedContent(labelSpan, `\\(x_{${fi + 1}}\\)`);
+            label.appendChild(labelSpan);
+            label.appendChild(document.createTextNode(' ='));
+          } else {
+            label.textContent = 'x =';
+          }
 
           const inp = document.createElement('input');
           inp.type = 'text';
           inp.inputMode = 'decimal';
           inp.className = 'flex-1 p-3 rounded-xl border min-h-[44px]';
-          inp.style.borderColor = 'var(--color-border)';
-          inp.style.backgroundColor = 'var(--color-surface-inset)';
-          inp.placeholder = 'Lösung';
+          inp.style.cssText = 'border-color: var(--color-border); background: var(--color-surface-inset); min-width: 3rem;';
 
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'px-3 py-2 rounded-lg text-sm cursor-pointer min-h-[44px]';
-          removeBtn.style.color = 'var(--color-error)';
-          removeBtn.style.border = '1px solid var(--color-border)';
-          removeBtn.textContent = '\u2212';
-          removeBtn.addEventListener('click', () => {
-            if (inputsContainer.children.length > 1) {
-              inputsContainer.removeChild(row);
-            }
-          });
-
-          row.append(inp, removeBtn);
-          inputsContainer.appendChild(row);
-          return inp;
+          fieldWrap.append(label, inp);
+          fieldsContainer.appendChild(fieldWrap);
+          fieldInputs.push(inp);
         }
-
-        addInput();
-
-        const addBtn = document.createElement('button');
-        addBtn.className = 'text-sm mt-1 px-3 py-2 rounded-lg cursor-pointer';
-        addBtn.style.color = 'var(--color-primary)';
-        addBtn.textContent = '+ Lösung hinzufügen';
-        addBtn.addEventListener('click', () => addInput());
 
         const submitBtn = document.createElement('button');
         submitBtn.className = 'btn-primary w-full py-3 rounded-xl mt-2 min-h-[44px]';
-        submitBtn.textContent = 'Prüfen';
+        submitBtn.textContent = 'Pr\u00fcfen';
 
-        wrapper.append(inputsContainer, addBtn, submitBtn);
-        inputArea.appendChild(wrapper);
+        inputArea.append(fieldsContainer, submitBtn);
 
-        const tolerance = step.tolerance ?? 0.01;
-        const correctArr = step.correctAnswer as number[];
-
-        submitBtn.addEventListener('click', () => {
-          const inputs = inputsContainer.querySelectorAll('input');
-          const values = Array.from(inputs).map(inp => (inp as HTMLInputElement).value);
-
+        const handleSubmit = () => {
+          const values = fieldInputs.map(inp => inp.value);
           if (values.every(v => !v.trim())) return;
 
           const correct = compareNumberSets(values, correctArr, tolerance);
 
           if (correct) {
-            inputs.forEach(inp => {
-              (inp as HTMLElement).style.borderColor = 'var(--color-success)';
-              (inp as HTMLInputElement).disabled = true;
+            fieldInputs.forEach(inp => {
+              inp.style.borderColor = 'var(--color-success)';
+              inp.disabled = true;
             });
             submitBtn.disabled = true;
-            addBtn.style.display = 'none';
             showCorrectFeedback(feedbackArea, step.explanation);
-            const display = values.filter(v => v.trim()).join('; ');
+            const subscripts = ['\u2081', '\u2082', '\u2083', '\u2084', '\u2085'];
+            const display = correctArr.map((v, i) => numFields > 1 ? `x${subscripts[i] ?? i + 1} = ${v}` : `x = ${v}`).join(',  ');
             collapseAndAdvance(stepEl, body, step, display, index);
           } else {
-            inputs.forEach(inp => {
-              (inp as HTMLElement).style.borderColor = 'var(--color-error)';
+            fieldInputs.forEach(inp => {
+              inp.style.borderColor = 'var(--color-error)';
             });
             showIncorrectFeedback(feedbackArea);
             hintArea.classList.remove('hidden');
             renderMixedContent(hintArea, step.hint);
 
             setTimeout(() => {
-              inputs.forEach(inp => {
-                (inp as HTMLInputElement).value = '';
-                (inp as HTMLElement).style.borderColor = 'var(--color-border)';
+              fieldInputs.forEach(inp => {
+                inp.value = '';
+                inp.style.borderColor = 'var(--color-border)';
               });
               feedbackArea.textContent = '';
+              fieldInputs[0]?.focus();
             }, 1200);
           }
+        };
+
+        submitBtn.addEventListener('click', handleSubmit);
+        fieldInputs.forEach((inp, fi) => {
+          inp.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+              if (fi < fieldInputs.length - 1) fieldInputs[fi + 1].focus();
+              else handleSubmit();
+            }
+          });
         });
 
         break;
