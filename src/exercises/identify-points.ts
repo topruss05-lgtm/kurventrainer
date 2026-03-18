@@ -522,7 +522,11 @@ function renderClassifyIntervalExercise(
       const xTo = sel.to === '+\u221e' ? bb[2] : sel.to as number;
 
       if (lockedIndices.has(idx)) {
-        // Gelockt: wei\u00dfes Overlay faded Kurve + Gitter aus
+        // Gelockt: normales Farbband + wei\u00dfes Overlay faded alles aus
+        const color = sel.type === 'smw' ? SMW_COLOR : SMF_COLOR;
+        const colorBand = createIntervalBand(xFrom, xTo, { color, opacity: 0.15 });
+        board.addElement(colorBand);
+        bandElements.push(colorBand);
         const fade = createIntervalBand(xFrom, xTo, { color: '#ffffff', opacity: 0.55 });
         board.addElement(fade);
         bandElements.push(fade);
