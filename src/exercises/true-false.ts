@@ -9,23 +9,35 @@ export function renderTrueFalse(
   exercise: TrueFalseExercise,
   onComplete: () => void,
 ): (() => void) | null {
-  const graphWrap = document.createElement('div');
-  graphWrap.className = 'mb-4';
+  // Graph wird erst nach der Antwort gezeigt (spoilert sonst die L\u00f6sung)
+  let board: import('../graph/canvas-board.js').CanvasBoard | null = null;
 
-  // Label: was zeigt der Graph?
-  const graphLabel = document.createElement('p');
-  graphLabel.style.cssText = 'font-size: 0.75rem; color: var(--color-ink-muted); margin-bottom: 0.25rem;';
-  const fnLatex = exercise.function.latex;
-  graphLabel.textContent = fnLatex.startsWith("f'") ? "Graph von f\u2019" : fnLatex.startsWith("f''") ? "Graph von f\u2019\u2019" : 'Graph von f';
-  graphWrap.appendChild(graphLabel);
+  function showGraph(): void {
+    const graphWrap = document.createElement('div');
+    graphWrap.className = 'animate-fade-in mt-3 mb-2';
 
-  const graphContainer = document.createElement('div');
-  graphWrap.appendChild(graphContainer);
+    const graphLabel = document.createElement('p');
+    graphLabel.style.cssText = 'font-size: 0.75rem; color: var(--color-ink-muted); margin-bottom: 0.25rem;';
+    const fnLatex = exercise.function.latex;
+    graphLabel.textContent = fnLatex.startsWith("f'") ? "Graph von f\u2019" : fnLatex.startsWith("f''") ? "Graph von f\u2019\u2019" : 'Graph von f';
+    graphWrap.appendChild(graphLabel);
 
-  const board = createBoard(graphContainer, { boundingBox: calcBoundingBox([exercise.function.fn]) });
-  const bbTF = board.getBoundingBox();
-  const xRangeTF: [number, number] = [Math.ceil(bbTF[0]), Math.floor(bbTF[2])];
-  plotFunction(board, exercise.function.fn, undefined, 0, xRangeTF);
+    const graphContainer = document.createElement('div');
+    graphWrap.appendChild(graphContainer);
+
+    board = createBoard(graphContainer, { boundingBox: calcBoundingBox([exercise.function.fn]) });
+    const bbTF = board.getBoundingBox();
+    const xRangeTF: [number, number] = [Math.ceil(bbTF[0]), Math.floor(bbTF[2])];
+    plotFunction(board, exercise.function.fn, undefined, 0, xRangeTF);
+
+    if (exercise.highlightX !== undefined) {
+      const y = exercise.function.fn(exercise.highlightX);
+      highlightPoint(board, exercise.highlightX, y, COLORS.secondary);
+    }
+
+    // Graph vor dem Feedback einfügen
+    feedbackDiv.parentElement?.insertBefore(graphWrap, feedbackDiv);
+  }
 
   const statementEl = document.createElement('div');
   statementEl.className = 'p-4 rounded-xl border mb-4';
@@ -147,11 +159,8 @@ export function renderTrueFalse(
       }
     });
 
-    // Highlight point on graph
-    if (exercise.highlightX !== undefined) {
-      const y = exercise.function.fn(exercise.highlightX);
-      highlightPoint(board, exercise.highlightX, y, COLORS.secondary, '\u25CF');
-    }
+    // Graph erst nach der Antwort zeigen
+    showGraph();
 
     feedbackDiv.classList.remove('hidden');
     if (allCorrect) {
@@ -172,9 +181,9 @@ export function renderTrueFalse(
   falseBtn.addEventListener('click', () => handleTruthChoice(false));
 
   reasonDiv.prepend(reasonLabel);
-  container.append(graphWrap, statementEl, btnRow, reasonDiv, feedbackDiv);
+  container.append(statementEl, btnRow, reasonDiv, feedbackDiv);
 
   return () => {
-    destroyBoard(board);
+    if (board) destroyBoard(board);
   };
 }

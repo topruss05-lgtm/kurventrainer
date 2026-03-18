@@ -9,7 +9,9 @@ import { EXTREMA_IDENTIFY_CASES } from './gen-identify-extrema.js';
 import { WENDEPUNKTE_IDENTIFY_CASES } from './gen-identify-wendepunkte.js';
 import { REVERSE_INFERENCE_CASES } from './gen-reverse-inference.js';
 import { GRAPH_ASSIGNMENT_CASES } from './gen-graph-assignment.js';
-import { TRUE_FALSE_CASES } from './gen-true-false.js';
+import { TF_MONOTONIE_CASES } from './gen-tf-monotonie.js';
+import { TF_EXTREMSTELLEN_CASES } from './gen-tf-extremstellen.js';
+import { TF_WENDESTELLEN_CASES } from './gen-tf-wendestellen.js';
 import { GRAPH_SKETCH_CASES } from './gen-graph-sketch.js';
 import { CONTEXT_CASES } from './gen-context.js';
 
@@ -19,31 +21,23 @@ export interface LevelConfig {
   cases: CaseDefinition[];
 }
 
-// Reverse-inference: nur Monotonie (rein steigend/fallend, keine Extrema-Terminologie)
-
-// Split true-false by module
-const tfMonotonie = TRUE_FALSE_CASES.filter(c => c.id.includes('monotonie') || c.id.includes('nichtumkehrbar'));
-const tfExtremstellen = TRUE_FALSE_CASES.filter(c => c.id.includes('extremum') || c.id.includes('sattelpunkt'));
-const tfWendestellen = TRUE_FALSE_CASES.filter(c => c.id.includes('wendestelle') || c.id.includes('kruemmung'));
-
 const LEVELS: LevelConfig[] = [
   // ─── Monotonie ───
   { moduleId: 'monotonie', exerciseType: 'identify-points', cases: MONOTONIE_INTERVAL_CASES },
   { moduleId: 'monotonie', exerciseType: 'step-by-step', cases: MONOTONIE_STEP_CASES },
-  { moduleId: 'monotonie', exerciseType: 'true-false', cases: tfMonotonie },
+  { moduleId: 'monotonie', exerciseType: 'true-false', cases: TF_MONOTONIE_CASES },
   { moduleId: 'monotonie', exerciseType: 'reverse-inference', cases: REVERSE_INFERENCE_CASES },
   { moduleId: 'monotonie', exerciseType: 'graph-sketch', cases: GRAPH_SKETCH_CASES.filter(c => c.id === 'sketch-monotonie') },
 
   // ─── Extremstellen ───
   { moduleId: 'extremstellen', exerciseType: 'identify-points', cases: EXTREMA_IDENTIFY_CASES },
   { moduleId: 'extremstellen', exerciseType: 'step-by-step', cases: EXTREMSTELLEN_STEP_CASES },
-  { moduleId: 'extremstellen', exerciseType: 'true-false', cases: tfExtremstellen },
-  // Extremstellen reverse-inference: kommt später mit HP/TP/SP Terminologie
+  { moduleId: 'extremstellen', exerciseType: 'true-false', cases: TF_EXTREMSTELLEN_CASES },
 
   // ─── Wendestellen ───
   { moduleId: 'wendestellen', exerciseType: 'identify-points', cases: WENDEPUNKTE_IDENTIFY_CASES },
   { moduleId: 'wendestellen', exerciseType: 'step-by-step', cases: WENDESTELLEN_STEP_CASES },
-  { moduleId: 'wendestellen', exerciseType: 'true-false', cases: tfWendestellen },
+  { moduleId: 'wendestellen', exerciseType: 'true-false', cases: TF_WENDESTELLEN_CASES },
 
   // ─── Zusammenhang ───
   { moduleId: 'zusammenhang', exerciseType: 'graph-assignment', cases: GRAPH_ASSIGNMENT_CASES },

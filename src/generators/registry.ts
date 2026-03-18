@@ -9,15 +9,17 @@ import { extremaIdentifyGenerator } from './gen-identify-extrema.js';
 import { wendepunkteIdentifyGenerator } from './gen-identify-wendepunkte.js';
 import { reverseInferenceGenerator } from './gen-reverse-inference.js';
 import { graphAssignmentGenerator } from './gen-graph-assignment.js';
-import { trueFalseGenerator } from './gen-true-false.js';
+import { tfMonotonieGenerator } from './gen-tf-monotonie.js';
+import { tfExtremstellenGenerator } from './gen-tf-extremstellen.js';
+import { tfWendestellenGenerator } from './gen-tf-wendestellen.js';
 import { graphSketchGenerator } from './gen-graph-sketch.js';
 import { contextGenerator } from './gen-context.js';
 import { getExercisesByModule } from '../data/exercise-loader.js';
 
 const GENERATORS: Partial<Record<ModuleId, ExerciseGenerator[]>> = {
-  monotonie: [monotonieIntervalGenerator, monotonieStepGenerator, trueFalseGenerator, reverseInferenceGenerator],
-  extremstellen: [extremstellenGenerator, extremaIdentifyGenerator, trueFalseGenerator, reverseInferenceGenerator],
-  wendestellen: [wendestellenGenerator, wendepunkteIdentifyGenerator, trueFalseGenerator],
+  monotonie: [monotonieIntervalGenerator, monotonieStepGenerator, tfMonotonieGenerator, reverseInferenceGenerator],
+  extremstellen: [extremstellenGenerator, extremaIdentifyGenerator, tfExtremstellenGenerator, reverseInferenceGenerator],
+  wendestellen: [wendestellenGenerator, wendepunkteIdentifyGenerator, tfWendestellenGenerator],
   zusammenhang: [graphAssignmentGenerator],
   kurvendiskussion: [kurvendiskussionStepGenerator, graphSketchGenerator],
   sachkontext: [contextGenerator],
