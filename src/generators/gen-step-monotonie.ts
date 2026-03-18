@@ -314,25 +314,33 @@ function genA2ParabolaFree(): StepByStepExercise {
 // ─── f' MC distractor generation ───
 
 function generateFPrimeDistractors(fCoeffs: number[], correctCoeffs: number[]): string[] {
-  const [a, b, c, _d] = fCoeffs;
   const distractorSet = new Set<string>();
   const correct = formatPolynomial(correctCoeffs);
 
-  // Forgot to multiply by exponent
-  const d1 = formatPolynomial([a, b, c]);
-  if (d1 !== correct) distractorSet.add(d1);
-
   // Wrong sign on middle term
-  const d2 = formatPolynomial([correctCoeffs[0], -correctCoeffs[1], correctCoeffs[2]]);
-  if (d2 !== correct) distractorSet.add(d2);
+  if (correctCoeffs.length >= 2) {
+    const d1 = [...correctCoeffs];
+    d1[1] = -d1[1];
+    const s = formatPolynomial(d1);
+    if (s !== correct) distractorSet.add(s);
+  }
 
-  // Wrong power rule (n+1 instead of n)
-  const d3 = formatPolynomial([4 * a, 3 * b, 2 * c]);
-  if (d3 !== correct) distractorSet.add(d3);
+  // Forgot to multiply by exponent (use original coeffs without degree factor)
+  const noExponent = fCoeffs.slice(0, -1); // drop constant, keep coeffs without power rule
+  const s2 = formatPolynomial(noExponent);
+  if (s2 !== correct) distractorSet.add(s2);
 
-  // Include constant (forgot that constants vanish)
-  const d4 = formatPolynomial([correctCoeffs[0], correctCoeffs[1], correctCoeffs[2], _d]);
-  if (d4 !== correct) distractorSet.add(d4);
+  // Include constant term (forgot that constants vanish)
+  const lastCoeff = fCoeffs[fCoeffs.length - 1];
+  if (lastCoeff !== undefined && lastCoeff !== 0) {
+    const withConst = [...correctCoeffs, lastCoeff];
+    const s3 = formatPolynomial(withConst);
+    if (s3 !== correct) distractorSet.add(s3);
+  }
+
+  // Original function itself (common mistake: forgetting to differentiate)
+  const origStr = formatPolynomial(fCoeffs);
+  if (origStr !== correct) distractorSet.add(origStr);
 
   const result = Array.from(distractorSet).slice(0, 3);
 
