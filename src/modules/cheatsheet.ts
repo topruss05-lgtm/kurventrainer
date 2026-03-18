@@ -655,12 +655,8 @@ function buildMonotonieExtremstellenSection(
   const SQRT2 = Math.sqrt(2);
   const constructionData: { x: number; slope: number; label: string }[] = [
     { x: -2.47, slope: 3, label: 'm = 3' },
-    { x: -2, slope: 0, label: 'm = 0' },
     { x: -SQRT2, slope: f1(-SQRT2), label: 'm \u2248 \u22121' },
-    { x: 0, slope: 0, label: 'm = 0' },
-    { x: SQRT2, slope: f1(SQRT2), label: 'm \u2248 \u22121' },
-    { x: 2, slope: 0, label: 'm = 0' },
-    { x: 2.47, slope: 3, label: 'm = 3' },
+    { x: -2, slope: 0, label: 'm = 0' },
   ];
   const constructionPts = constructionData.map(d => {
     const pt = createPoint(d.x, d.slope, { color: '#e07a3a', size: 7, label: d.label, labelOffset: [6, -8] });
@@ -1267,33 +1263,22 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   audio1.preload = 'auto';
 
   // ── Voiceover 1: Construction animation ──
-  // Timeline based on VTT timestamps:
-  //  0.0  "Das ist der Graph einer Funktion f."
-  //  3.0  "An jeder Stelle hat der Graph eine bestimmte Steigung."
-  //  7.1  "Die können wir mit einer Tangente sichtbar machen."
-  // 10.7  "Hier links ist die Steigung drei" → tangent at x=-2.47, plot pt[0]
-  // 15.2  "Am Hochpunkt wird es flach — Steigung Null" → tangent at x=-2, plot pt[1]
-  // 18.9  "Danach fällt der Graph."
-  // 21.3  "An der steilsten Stelle — Steigung ≈ -1" → tangent at x=-√2, plot pt[2]
-  // 25.7  "Am Sattelpunkt — Steigung wieder Null" → tangent at x=0, plot pt[3]
-  // 31.5  "Nochmal die steilste Stelle — Steigung -1" → tangent at x=√2, plot pt[4]
-  // 36.1  "Am Tiefpunkt: Steigung Null" → tangent at x=2, plot pt[5]
-  // 39.0  "Rechts steigt der Graph — Steigung drei" → tangent at x=2.47, plot pt[6]
-  // 43.1  "Jetzt tragen wir diese Steigungswerte als Punkte ein" → (pts already plotted)
-  // 49.4  "Daraus entsteht ein neuer Graph — f Strich" → reveal f' curve
-  // 54.2  "Er zeigt für jede Stelle, wie steil f gerade ist."
-  // 58.5  "Schau wo f' die x-Achse kreuzt — Steigung Null" → highlight zeros
-  // 65.2  "Das sind HP, TP und SP"
-  // 68.6  "Wo f' oberhalb liegt — smw" → highlight steigend
-  // 74.4  "Wo f' unterhalb — smf" → highlight fallend
-  // 79.4  "Der entscheidende Unterschied: VZW am HP" → highlight HP
-  // 87.3  "Am SP kein VZW — kein Extremum" → highlight SP
-  // 93.9  "Probier es jetzt selbst aus"
+  // Phase 1 (0-19s): 3 example tangents + plot orange pts
+  // Phase 2 (19-29s): "Jede Steigung eintragen" + "für alle Stellen auf einmal" → sweep
+  // Phase 3 (29-38s): f' curve appears, explanation
+  // Phase 4 (38-99s): Interpretation (smw, smf, HP, TP, SP, VZW)
+  // Phase 5 (99s): Outro, reset
 
-  const constructionX = [-2.47, -2, -Math.sqrt(2), 0, Math.sqrt(2), 2, 2.47];
+  // Sweep: tangent travels x=-2.8→2.8, dot traces f' path
+  const SWEEP_START = 25.8;  // "Das machen wir jetzt für alle Stellen"
+  const SWEEP_END = 29.4;    // just before "Was dabei entsteht..."
+  const SWEEP_X0 = -2.8;
+  const SWEEP_X1 = 2.8;
+
+  function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
 
   const cues: { time: number; action: () => void }[] = [
-    // Init: hide f' completely, hide all construction pts, blank graph
+    // Init: only f graph, f'-board hidden, everything clean
     { time: 0.0, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
@@ -1303,95 +1288,89 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       for (const el of h.f1Elements) el.visible = false;
       for (const pt of h.constructionPts) pt.visible = false;
     }},
-    // Show f'-board (empty, just axes) for plotting points
-    { time: 7.1, action: () => {
+    // "An jeder Stelle..." — show f'-board (empty axes)
+    { time: 3.0, action: () => {
       h.f1Label.style.display = '';
       h.boardF1.canvas.style.display = '';
       h.boardF1.update();
     }},
-    // pt 0: x=-2.47, m=3
-    { time: 10.7, action: () => {
-      h.showAtX(constructionX[0]);
+    // Example 1: x=-2.47, m=3 — "Hier zum Beispiel ist die Steigung drei"
+    { time: 8.6, action: () => {
+      h.showAtX(-2.47);
       h.constructionPts[0].visible = true;
       h.boardF1.update();
     }},
-    // pt 1: x=-2, m=0 (HP)
-    { time: 15.2, action: () => {
-      h.showAtX(constructionX[1]);
+    // Example 2: x=-√2, m≈-1 — "Hier ist sie ungefähr minus eins"
+    { time: 12.1, action: () => {
+      h.showAtX(-Math.sqrt(2));
       h.constructionPts[1].visible = true;
       h.boardF1.update();
     }},
-    // pt 2: x=-√2, m≈-1
-    { time: 21.3, action: () => {
-      h.showAtX(constructionX[2]);
+    // Example 3: x=-2, m=0 — "Und hier ist die Steigung Null"
+    { time: 15.2, action: () => {
+      h.showAtX(-2);
       h.constructionPts[2].visible = true;
       h.boardF1.update();
     }},
-    // pt 3: x=0, m=0 (SP)
-    { time: 25.7, action: () => {
-      h.showAtX(constructionX[3]);
-      h.constructionPts[3].visible = true;
-      h.boardF1.update();
-    }},
-    // pt 4: x=√2, m≈-1
-    { time: 31.5, action: () => {
-      h.showAtX(constructionX[4]);
-      h.constructionPts[4].visible = true;
-      h.boardF1.update();
-    }},
-    // pt 5: x=2, m=0 (TP)
-    { time: 36.1, action: () => {
-      h.showAtX(constructionX[5]);
-      h.constructionPts[5].visible = true;
-      h.boardF1.update();
-    }},
-    // pt 6: x=2.47, m=3
-    { time: 39.0, action: () => {
-      h.showAtX(constructionX[6]);
-      h.constructionPts[6].visible = true;
-      h.boardF1.update();
-    }},
-    // "Jetzt tragen wir..." — hide tangent, let points sit
-    { time: 43.1, action: () => {
+    // "Jede dieser Steigungen..." — hide tangent briefly
+    { time: 19.6, action: () => {
       h.hideGraphics();
     }},
-    // "Daraus entsteht f'" — reveal the f' curve through the points
-    { time: 49.4, action: () => {
+    // Sweep start: "Das machen wir jetzt für alle Stellen" — sweep begins (handled in tick)
+    // After sweep: "Was dabei entsteht..." — reveal f' curve, hide construction pts
+    { time: 29.4, action: () => {
+      h.hideGraphics();
+      for (const pt of h.constructionPts) pt.visible = false;
       for (const el of h.f1Elements) el.visible = true;
       h.setGraphState('blank');
       h.boardF.update();
       h.boardF1.update();
     }},
-    // "Wo f' oberhalb liegt — smw"
-    { time: 68.6, action: () => {
+    // "Jetzt schauen wir uns an..." — clear for interpretation
+    { time: 38.2, action: () => {
+      h.setGraphState('blank');
+      monoCtrl.clearHighlights();
+    }},
+    // "Wo f' über der x-Achse liegt — smw"
+    { time: 42.8, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
     }},
-    // "Wo f' unterhalb — smf"
-    { time: 74.4, action: () => {
+    // "smf"
+    { time: 51.4, action: () => {
       h.setGraphState('zone', 'fallend');
       monoCtrl.highlightZone('fallend');
     }},
-    // "VZW am HP"
-    { time: 79.4, action: () => {
+    // "Wo f' die x-Achse kreuzt — Steigung Null"
+    { time: 59.4, action: () => {
+      h.setGraphState('blank');
+      monoCtrl.clearHighlights();
+    }},
+    // "An dieser Stelle wechselt f' von + zu - — VZW — HP"
+    { time: 63.8, action: () => {
       monoCtrl.highlightZone('hp');
       h.setGraphState('point', 'hp');
       h.showAtX(-2);
     }},
-    // "Am SP kein VZW"
-    { time: 87.3, action: () => {
+    // "Hier wechselt f' von - zu + — TP"
+    { time: 75.5, action: () => {
+      monoCtrl.highlightZone('tp');
+      h.setGraphState('point', 'tp');
+      h.showAtX(2);
+    }},
+    // "Und hier? f' ist Null aber kein VZW — SP"
+    { time: 84.2, action: () => {
       highlightCardsMulti(monoCtrl.cards, ['fallend', 'sp']);
       h.setGraphState('segment', undefined, 1);
       h.showAtX(0);
       h.showSpCallout();
     }},
     // Outro: reset
-    { time: 93.9, action: () => {
+    { time: 99.1, action: () => {
       h.hideGraphics();
       h.hideSpCallout(true);
       monoCtrl.clearAll();
       h.setGraphState('blank');
-      // Hide construction pts, show f' curve normally
       for (const pt of h.constructionPts) pt.visible = false;
       h.boardF.update();
       h.boardF1.update();
@@ -1402,15 +1381,28 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   let rafId1 = 0;
   function tick1(): void {
     const t = audio1.currentTime;
+    // Fire cues
     while (cueIdx1 < cues.length && t >= cues[cueIdx1].time) {
       cues[cueIdx1].action();
       cueIdx1++;
+    }
+    // Sweep animation: tangent travels across f, dot traces f'
+    if (t >= SWEEP_START && t < SWEEP_END) {
+      const progress = (t - SWEEP_START) / (SWEEP_END - SWEEP_START);
+      const mx = lerp(SWEEP_X0, SWEEP_X1, progress);
+      h.showAtX(mx);
+      // Hide construction pts as sweep dot passes over them
+      for (let i = 0; i < h.constructionPts.length; i++) {
+        if (h.constructionPts[i].visible && mx > ([-2.47, -Math.sqrt(2), -2][i] ?? 999) + 0.2) {
+          h.constructionPts[i].visible = false;
+          h.boardF1.update();
+        }
+      }
     }
     if (!audio1.paused) rafId1 = requestAnimationFrame(tick1);
   }
 
   function resetVoiceover1(): void {
-    // Restore everything to normal interactive state
     for (const pt of h.constructionPts) pt.visible = false;
     for (const el of h.f1Elements) el.visible = true;
     h.f1Label.style.display = '';

@@ -3,82 +3,98 @@
 Das ist der Graph einer Funktion f.
 
 2
-00:00:03,027 --> 00:00:07,125
-An jeder Stelle hat der Graph eine bestimmte Steigung.
+00:00:03,027 --> 00:00:08,625
+An jeder Stelle können wir eine Tangente anlegen und ihre Steigung ablesen.
 
 3
-00:00:07,125 --> 00:00:10,694
-Die können wir mit einer Tangente sichtbar machen.
+00:00:08,625 --> 00:00:12,083
+Hier zum Beispiel ist die Steigung drei.
 
 4
-00:00:10,694 --> 00:00:15,222
-Hier links ist die Steigung drei — der Graph steigt steil an.
+00:00:12,083 --> 00:00:15,166
+Hier ist sie ungefähr minus eins.
 
 5
-00:00:15,222 --> 00:00:18,944
-Am Hochpunkt wird es flach — die Steigung ist Null.
+00:00:15,166 --> 00:00:19,597
+Und hier ist die Steigung Null — die Tangente liegt waagerecht.
 
 6
-00:00:18,944 --> 00:00:21,250
-Danach fällt der Graph.
+00:00:19,597 --> 00:00:25,791
+Jede dieser Steigungen können wir als Punkt in ein eigenes Koordinatensystem eintragen.
 
 7
-00:00:21,250 --> 00:00:25,680
-An der steilsten Stelle ist die Steigung ungefähr minus eins.
+00:00:25,791 --> 00:00:29,416
+Das machen wir jetzt für alle Stellen auf einmal.
 
 8
-00:00:25,680 --> 00:00:31,513
-Am Sattelpunkt ist die Steigung wieder Null — aber der Graph fällt danach einfach weiter.
+00:00:29,416 --> 00:00:33,902
+Was dabei entsteht, ist der Graph der Ableitung f Strich.
 
 9
-00:00:31,513 --> 00:00:36,125
-Nochmal die steilste Stelle beim Fallen — Steigung minus eins.
-
-10
-00:00:36,125 --> 00:00:39,041
-Am Tiefpunkt: Steigung Null.
-
-11
-00:00:39,041 --> 00:00:43,125
-Und rechts steigt der Graph wieder steil — Steigung drei.
-
-12
-00:00:43,125 --> 00:00:49,444
-Jetzt tragen wir diese Steigungswerte als Punkte in ein eigenes Koordinatensystem ein.
-
-13
-00:00:49,444 --> 00:00:54,166
-Daraus entsteht ein neuer Graph — der Graph der Ableitung f Strich.
-
-14
-00:00:54,166 --> 00:00:58,500
+00:00:33,902 --> 00:00:38,236
 Er zeigt für jede Stelle, wie steil f gerade ist.
 
+10
+00:00:38,236 --> 00:00:42,819
+Jetzt schauen wir uns an, was uns f Strich über f verrät.
+
+11
+00:00:42,819 --> 00:00:48,444
+Wo f Strich über der x-Achse liegt, ist die Steigung positiv — f steigt.
+
+12
+00:00:48,444 --> 00:00:51,375
+Das heißt streng monoton wachsend.
+
+13
+00:00:51,375 --> 00:00:56,861
+Wo f Strich unter der x-Achse liegt, ist die Steigung negativ — f fällt.
+
+14
+00:00:56,861 --> 00:00:59,388
+Streng monoton fallend.
+
 15
-00:00:58,500 --> 00:01:05,208
-Schau dir an, wo f Strich die x-Achse kreuzt — genau dort ist die Steigung von f gleich Null.
+00:00:59,388 --> 00:01:03,833
+Und wo f Strich die x-Achse kreuzt, ist die Steigung Null.
 
 16
-00:01:05,208 --> 00:01:08,625
-Das sind Hoch-, Tief- und Sattelpunkt.
+00:01:03,833 --> 00:01:09,888
+An dieser Stelle wechselt f Strich von positiv zu negativ — ein Vorzeichenwechsel.
 
 17
-00:01:08,625 --> 00:01:14,388
-Wo f Strich oberhalb der x-Achse liegt, steigt f — streng monoton wachsend.
+00:01:09,888 --> 00:01:13,208
+Die Funktion geht von steigend zu fallend.
 
 18
-00:01:14,388 --> 00:01:19,361
-Wo f Strich unterhalb liegt, fällt f — streng monoton fallend.
+00:01:13,208 --> 00:01:15,458
+Das ist ein Hochpunkt.
 
 19
-00:01:19,361 --> 00:01:27,319
-Und der entscheidende Unterschied: Am Hochpunkt wechselt f Strich von positiv zu negativ — ein Vorzeichenwechsel.
+00:01:15,458 --> 00:01:21,930
+Hier wechselt f Strich von negativ zu positiv — die Funktion geht von fallend zu steigend.
 
 20
-00:01:27,319 --> 00:01:33,916
-Am Sattelpunkt bleibt f Strich negativ — kein Vorzeichenwechsel, also kein Extremum.
+00:01:21,930 --> 00:01:24,180
+Das ist ein Tiefpunkt.
 
 21
-00:01:33,916 --> 00:01:36,722
+00:01:24,180 --> 00:01:25,819
+Und hier?
+
+22
+00:01:25,819 --> 00:01:30,666
+f Strich ist zwar Null, aber es gibt keinen Vorzeichenwechsel.
+
+23
+00:01:30,666 --> 00:01:35,569
+f Strich bleibt negativ, die Funktion fällt einfach weiter.
+
+24
+00:01:35,569 --> 00:01:39,055
+Das ist ein Sattelpunkt — kein Extremum.
+
+25
+00:01:39,055 --> 00:01:41,861
 Probier es jetzt selbst aus.
 
