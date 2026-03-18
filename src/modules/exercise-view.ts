@@ -12,7 +12,10 @@ import { renderGraphSketch } from '../exercises/graph-sketch.js';
 import { renderContradictionArgument } from '../exercises/contradiction-argument.js';
 import { renderTransformationReasoning } from '../exercises/transformation-reasoning.js';
 import { generateRandomExercise } from '../generators/registry.js';
+import { getLevelConfig } from '../generators/levels.js';
+import { getCompletedCases, markCaseCompleted } from '../progress/storage.js';
 import type { Exercise, ModuleId, ExerciseType, CompetencyLevel } from '../types/exercise.js';
+import type { CaseDefinition } from '../generators/types.js';
 
 type StepByStepMode = 'guided' | 'free';
 
@@ -25,6 +28,12 @@ export function renderExerciseView(
   // ─── Endlosmodus ───
   if (type === 'random') {
     return renderEndlessMode(container, moduleId as ModuleId);
+  }
+
+  // ─── Level-Modus (generierte Aufgaben mit Case-Queue) ───
+  const levelConfig = getLevelConfig(moduleId as ModuleId, type as ExerciseType);
+  if (levelConfig) {
+    return renderLevelMode(container, levelConfig);
   }
 
   const exercises = getExercises(
@@ -389,4 +398,195 @@ function renderEndlessMode(
   return () => {
     destroyExercise?.();
   };
+}
+
+// ─── Level-Modus: Case-Queue mit Fortschritt + Completion ───
+
+function renderLevelMode(
+  container: HTMLElement,
+  config: import('../generators/levels.js').LevelConfig,
+): (() => void) | null {
+  let destroyExercise: (() => void) | null = null;
+  const { moduleId, exerciseType, cases } = config;
+
+  // Build queue: uncompleted cases first, then completed (for replay)
+  const completedCases = getCompletedCases();
+  const remaining: CaseDefinition[] = [];
+  const done: CaseDefinition[] = [];
+  for (const c of cases) {
+    const key = `${moduleId}:${exerciseType}:${c.id}`;
+    if (completedCases[key]) {
+      done.push(c);
+    } else {
+      remaining.push(c);
+    }
+  }
+
+  // Shuffle remaining for variety
+  for (let i = remaining.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+  }
+
+  const queue = [...remaining, ...done];
+  let queueIndex = 0;
+  let currentCase: CaseDefinition | null = null;
+  let justCompleted = false;
+
+  // ─── Back button ───
+  const backBtn = document.createElement('button');
+  backBtn.className = 'back-link animate-fade-in';
+  backBtn.style.cssText = 'margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.375rem;';
+  backBtn.textContent = '\u2190 Zur\u00fcck';
+  backBtn.addEventListener('click', () => navigate({ page: 'module', moduleId }));
+
+  // ─── Progress bar ───
+  const progressWrap = document.createElement('div');
+  progressWrap.className = 'animate-fade-in';
+  progressWrap.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;';
+
+  const progressText = document.createElement('span');
+  progressText.style.cssText = `
+    font-family: var(--font-display); font-size: 0.75rem; font-weight: 600;
+    color: var(--color-ink-muted); white-space: nowrap;
+  `;
+
+  const dotsRow = document.createElement('div');
+  dotsRow.style.cssText = 'display: flex; align-items: center; gap: 4px; flex: 1;';
+
+  const dots: HTMLElement[] = [];
+  for (const c of cases) {
+    const dot = document.createElement('span');
+    const key = `${moduleId}:${exerciseType}:${c.id}`;
+    const isDone = !!completedCases[key];
+    dot.style.cssText = `
+      flex: 1; height: 6px; border-radius: 3px; transition: background 0.3s;
+      background: ${isDone ? 'var(--color-success)' : 'var(--color-surface-inset)'};
+    `;
+    dot.title = c.label;
+    dotsRow.appendChild(dot);
+    dots.push(dot);
+  }
+
+  progressWrap.append(progressText, dotsRow);
+
+  function updateProgress(): void {
+    const cc = getCompletedCases();
+    let count = 0;
+    cases.forEach((c, i) => {
+      const key = `${moduleId}:${exerciseType}:${c.id}`;
+      const isDone = !!cc[key];
+      if (isDone) count++;
+      dots[i].style.background = isDone ? 'var(--color-success)' : 'var(--color-surface-inset)';
+    });
+    progressText.textContent = `${count} / ${cases.length}`;
+  }
+  updateProgress();
+
+  // ─── Exercise card ───
+  const exerciseContainer = document.createElement('div');
+  exerciseContainer.className = 'card';
+
+  // ─── Next button ───
+  const nextBtn = document.createElement('button');
+  nextBtn.style.cssText = `
+    display: none; width: 100%; margin-top: 1rem; padding: 0.75rem;
+    background: var(--color-accent); color: #fff; border: none; border-radius: 0.5rem;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+  `;
+  nextBtn.textContent = 'N\u00e4chste Aufgabe \u2192';
+  nextBtn.addEventListener('mouseenter', () => {
+    nextBtn.style.backgroundColor = 'var(--color-accent-dark)';
+    nextBtn.style.boxShadow = '0 2px 8px rgba(224,122,58,0.25)';
+  });
+  nextBtn.addEventListener('mouseleave', () => {
+    nextBtn.style.backgroundColor = 'var(--color-accent)';
+    nextBtn.style.boxShadow = 'none';
+  });
+  nextBtn.addEventListener('click', () => renderNextCase());
+
+  container.append(backBtn, progressWrap, exerciseContainer, nextBtn);
+
+  function renderNextCase(): void {
+    destroyExercise?.();
+    destroyExercise = null;
+    while (exerciseContainer.firstChild) {
+      exerciseContainer.removeChild(exerciseContainer.firstChild);
+    }
+    nextBtn.style.display = 'none';
+
+    // Check if all cases completed → show completion
+    const cc = getCompletedCases();
+    const allDone = cases.every(c => cc[`${moduleId}:${exerciseType}:${c.id}`]);
+
+    if (allDone && !justCompleted) {
+      justCompleted = true;
+      showCompletion(exerciseContainer, () => {
+        // After celebration, continue with endless generated exercises
+        nextBtn.textContent = 'Weiter \u00fcben \u2192';
+        nextBtn.style.display = 'block';
+        nextBtn.onclick = () => renderNextCase();
+      });
+      return;
+    }
+
+    exerciseContainer.classList.remove('animate-scale-in');
+    void exerciseContainer.offsetWidth;
+    exerciseContainer.classList.add('animate-scale-in');
+
+    // Pick next case from queue (cycle through)
+    if (queueIndex >= queue.length) queueIndex = 0;
+    currentCase = queue[queueIndex];
+    queueIndex++;
+
+    const exercise = currentCase.generate();
+    const caseId = currentCase.id;
+
+    const onComplete = () => {
+      markCaseCompleted(moduleId, exerciseType, caseId);
+      updateProgress();
+      nextBtn.style.display = 'block';
+    };
+
+    destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete);
+  }
+
+  renderNextCase();
+
+  return () => {
+    destroyExercise?.();
+  };
+}
+
+function showCompletion(container: HTMLElement, onContinue: () => void): void {
+  const wrap = document.createElement('div');
+  wrap.className = 'animate-scale-in';
+  wrap.style.cssText = 'text-align: center; padding: 2rem 1rem;';
+
+  const checkmark = document.createElement('div');
+  checkmark.style.cssText = `
+    width: 4rem; height: 4rem; border-radius: 50%; margin: 0 auto 1.25rem;
+    background: var(--color-success-bg); border: 3px solid var(--color-success);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.75rem; color: var(--color-success);
+    animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  `;
+  checkmark.textContent = '\u2713';
+
+  const title = document.createElement('h2');
+  title.style.cssText = `
+    font-family: var(--font-display); font-weight: 800; font-size: 1.5rem;
+    color: var(--color-ink); margin-bottom: 0.5rem;
+  `;
+  title.textContent = 'Level geschafft!';
+
+  const sub = document.createElement('p');
+  sub.style.cssText = 'font-size: 0.9rem; color: var(--color-ink-muted); margin-bottom: 1.5rem;';
+  sub.textContent = 'Alle Aufgabentypen einmal korrekt gel\u00f6st. Du kannst jetzt weiter \u00fcben oder zum Modul zur\u00fcckkehren.';
+
+  wrap.append(checkmark, title, sub);
+  container.appendChild(wrap);
+
+  setTimeout(onContinue, 800);
 }

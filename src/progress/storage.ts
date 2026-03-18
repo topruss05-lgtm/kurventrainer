@@ -76,6 +76,26 @@ export function markExerciseCompleted(exerciseId: string): void {
   saveProgress(progress);
 }
 
+export function getCompletedCases(): Record<string, boolean> {
+  return getProgress().completedCases ?? {};
+}
+
+export function markCaseCompleted(moduleId: string, exerciseType: string, caseId: string): void {
+  const progress = getProgress();
+  if (!progress.completedCases) progress.completedCases = {};
+  progress.completedCases[`${moduleId}:${exerciseType}:${caseId}`] = true;
+  saveProgress(progress);
+}
+
+export function getCaseProgress(moduleId: string, exerciseType: string, caseIds: string[]): { completed: number; total: number } {
+  const cases = getProgress().completedCases ?? {};
+  let completed = 0;
+  for (const caseId of caseIds) {
+    if (cases[`${moduleId}:${exerciseType}:${caseId}`]) completed++;
+  }
+  return { completed, total: caseIds.length };
+}
+
 export function resetAllProgress(): void {
   localStorage.removeItem(STORAGE_KEY);
 }

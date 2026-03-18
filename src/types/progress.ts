@@ -26,6 +26,7 @@ export interface AppProgress {
   spacedRepetition: SpacedRepetitionCard[];
   lastSessionStart?: string;
   completedExercises?: Record<string, boolean>;
+  completedCases?: Record<string, boolean>; // key: "moduleId:exerciseType:caseId"
 }
 
 export interface ModuleConfig {

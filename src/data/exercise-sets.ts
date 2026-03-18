@@ -7,7 +7,7 @@ export interface ExerciseSetConfig {
 
 export const EXERCISE_SETS: Record<ModuleId, ExerciseSetConfig[]> = {
   monotonie: [
-    { type: 'identify-points', requiredIds: ['mono-id-01', 'mono-id-04', 'mono-k2-01', 'mono-k2-05'] },
+    { type: 'identify-points', requiredIds: ['mono-id-01', 'mono-id-06', 'mono-id-07', 'mono-k2-05', 'mono-k2-06'] },
     { type: 'step-by-step', requiredIds: ['mon-step-a2-01', 'mon-step-a2-02', 'mon-step-a3-01'] },
     { type: 'true-false', requiredIds: ['mono-tf-01', 'mono-tf-02', 'mono-tf-05', 'mono-tf-07'] },
     { type: 'reverse-inference', requiredIds: ['mono-rev-01', 'mono-rev-08'] },

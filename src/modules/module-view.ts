@@ -2,7 +2,8 @@ import { MODULE_CONFIGS } from '../config.js';
 import { navigate } from '../router.js';
 import { getAvailableExerciseTypes, getAvailableCompetencyLevels, getExerciseCountByType } from '../data/exercise-loader.js';
 import { getExerciseSet } from '../data/exercise-sets.js';
-import { getCompletedExercises } from '../progress/storage.js';
+import { getCompletedExercises, getCompletedCases } from '../progress/storage.js';
+import { getLevelConfig } from '../generators/levels.js';
 import type { ExerciseType, CompetencyLevel } from '../types/exercise.js';
 
 const TYPE_LABELS: Record<ExerciseType, string> = {
@@ -232,30 +233,29 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
 
     content.append(title, sub);
 
-    // Progress dots
-    const completedExercises = getCompletedExercises();
-    const exerciseSets = getExerciseSet(config.id);
-    const setConfig = exerciseSets.find(s => s.type === exerciseType);
-    const requiredIds = setConfig?.requiredIds ?? [];
-
+    // Progress: Case-basiert (generierte Aufgaben) oder Exercise-ID-basiert (feste Aufgaben)
     const progressContainer = document.createElement('span');
-    progressContainer.style.cssText = `
-      display: flex; align-items: center; gap: 0.375rem; flex-shrink: 0;
-    `;
+    progressContainer.style.cssText = 'display: flex; align-items: center; gap: 0.375rem; flex-shrink: 0;';
 
-    if (requiredIds.length > 0) {
+    const level = getLevelConfig(config.id, exerciseType);
+
+    if (level) {
+      // Case-basierte Fortschritts-Dots
+      const cc = getCompletedCases();
       const dotsRow = document.createElement('span');
       dotsRow.style.cssText = 'display: flex; align-items: center; gap: 3px;';
 
       let completedCount = 0;
-      for (const reqId of requiredIds) {
-        const dot = document.createElement('span');
-        const done = !!completedExercises[reqId];
+      for (const c of level.cases) {
+        const key = `${config.id}:${exerciseType}:${c.id}`;
+        const done = !!cc[key];
         if (done) completedCount++;
+        const dot = document.createElement('span');
         dot.style.cssText = `
           display: block; width: 8px; height: 8px; border-radius: 50%;
           background: ${done ? 'var(--color-success)' : 'var(--color-border)'};
         `;
+        dot.title = c.label;
         dotsRow.appendChild(dot);
       }
 
@@ -264,19 +264,47 @@ export function renderModuleView(container: HTMLElement, moduleId: string): (() 
         font-family: var(--font-display); font-weight: 600; font-size: 0.7rem;
         color: var(--color-ink-muted); white-space: nowrap; margin-left: 0.125rem;
       `;
-      countText.textContent = `${completedCount}/${requiredIds.length}`;
-
+      countText.textContent = `${completedCount}/${level.cases.length}`;
       progressContainer.append(dotsRow, countText);
     } else {
-      const countBadge = document.createElement('span');
-      countBadge.style.cssText = `
-        font-family: var(--font-display); font-weight: 600; font-size: 0.7rem;
-        color: var(--color-ink-muted); white-space: nowrap;
-        background: var(--color-surface-inset); padding: 0.25rem 0.5rem;
-        border-radius: 0.375rem;
-      `;
-      countBadge.textContent = `${count}`;
-      progressContainer.appendChild(countBadge);
+      // Fallback: Exercise-ID-basiert oder einfacher Zähler
+      const completedExercises = getCompletedExercises();
+      const exerciseSets = getExerciseSet(config.id);
+      const setConfig = exerciseSets.find(s => s.type === exerciseType);
+      const requiredIds = setConfig?.requiredIds ?? [];
+
+      if (requiredIds.length > 0) {
+        const dotsRow = document.createElement('span');
+        dotsRow.style.cssText = 'display: flex; align-items: center; gap: 3px;';
+        let completedCount = 0;
+        for (const reqId of requiredIds) {
+          const done = !!completedExercises[reqId];
+          if (done) completedCount++;
+          const dot = document.createElement('span');
+          dot.style.cssText = `
+            display: block; width: 8px; height: 8px; border-radius: 50%;
+            background: ${done ? 'var(--color-success)' : 'var(--color-border)'};
+          `;
+          dotsRow.appendChild(dot);
+        }
+        const countText = document.createElement('span');
+        countText.style.cssText = `
+          font-family: var(--font-display); font-weight: 600; font-size: 0.7rem;
+          color: var(--color-ink-muted); white-space: nowrap; margin-left: 0.125rem;
+        `;
+        countText.textContent = `${completedCount}/${requiredIds.length}`;
+        progressContainer.append(dotsRow, countText);
+      } else {
+        const countBadge = document.createElement('span');
+        countBadge.style.cssText = `
+          font-family: var(--font-display); font-weight: 600; font-size: 0.7rem;
+          color: var(--color-ink-muted); white-space: nowrap;
+          background: var(--color-surface-inset); padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
+        `;
+        countBadge.textContent = `${count}`;
+        progressContainer.appendChild(countBadge);
+      }
     }
 
     // Arrow
