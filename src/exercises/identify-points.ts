@@ -632,11 +632,20 @@ function renderClassifyIntervalExercise(
       answered = true;
       recordResult(exercise.module, exercise.id, true);
 
-      rowsContainer.querySelectorAll('button').forEach(b => {
-        (b as HTMLElement).style.cursor = 'default';
-        (b as HTMLElement).style.pointerEvents = 'none';
-      });
+      // Alle Rows voll sichtbar + gesperrt
+      for (let i = 0; i < rowsContainer.children.length; i++) {
+        const row = rowsContainer.children[i] as HTMLElement;
+        row.style.opacity = '1';
+        row.style.pointerEvents = 'none';
+        row.style.borderColor = 'var(--color-success-border)';
+        row.querySelectorAll('button').forEach(b => {
+          (b as HTMLElement).style.cursor = 'default';
+          (b as HTMLElement).style.pointerEvents = 'none';
+        });
+      }
 
+      // Alle B\u00e4nder kr\u00e4ftig anzeigen
+      lockedIndices.clear();
       for (const el of bandElements) board.removeElement(el);
       bandElements.length = 0;
       for (const iv of correct) {
