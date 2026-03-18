@@ -141,7 +141,7 @@ function genRevTwoPhase(): IdentifyPointsExercise {
     extremaOptions: {
       xValues: allOptions,
       correctIndices,
-      prompt: 'An welchen Stellen hat f\u2019 Nullstellen? W\u00e4hle alle aus.',
+      prompt: 'An welchen Stellen \u00e4ndert f sein Monotonieverhalten?',
     },
   };
 }
