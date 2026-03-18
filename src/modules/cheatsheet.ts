@@ -572,6 +572,7 @@ interface VoiceoverHooks {
   /** Trace curve for sweep animation (mutable xRange) */
   traceCurve: { visible: boolean };
   traceRange: [number, number];
+  showTangentOnly: (mx: number) => void;
 }
 
 interface SectionResult {
@@ -787,6 +788,20 @@ function buildMonotonieExtremstellenSection(
     boardF1.update();
   }
 
+  /** Show tangent on f only — no derivDot on f' (for voiceover construction phase) */
+  function showTangentOnly(mx: number): void {
+    const y = f(mx);
+    const slope = f1(mx);
+    if (!Number.isFinite(y) || !Number.isFinite(slope)) return;
+    const bb = boardF.getBoundingBox();
+    tangentLine.setEndpoints([bb[0], y + slope * (bb[0] - mx)], [bb[2], y + slope * (bb[2] - mx)]);
+    tangentLine.visible = true;
+    tangentDot.setPosition(mx, y);
+    tangentDot.visible = true;
+    derivDot.visible = false;
+    boardF.update();
+  }
+
   function hideGraphics(): void {
     tangentLine.visible = false;
     tangentDot.visible = false;
@@ -911,7 +926,7 @@ function buildMonotonieExtremstellenSection(
   return {
     boards: [boardF, boardF1],
     ctrl,
-    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements, traceCurve, traceRange },
+    hooks: { showAtX, hideGraphics, setGraphState, getSegIndex, showSpCallout, hideSpCallout, boardF, boardF1, fLabel, f1Label, nachweisPlayBtn, constructionPts, f1Elements, traceCurve, traceRange, showTangentOnly },
   };
 }
 
@@ -1288,36 +1303,34 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       monoCtrl.clearAll();
       h.setGraphState('blank');
       h.hideGraphics();
-      h.f1Label.style.display = 'none';
+      h.f1Label.style.visibility = 'hidden';
       h.boardF1.canvas.style.display = 'none';
       for (const el of h.f1Elements) el.visible = false;
       for (const pt of h.constructionPts) pt.visible = false;
       h.traceCurve.visible = false;
     }},
-    // Example 1: tangent on f (no point yet)
+    // Example 1: tangent on f only (no derivDot on f')
     { time: T.example1, action: () => {
-      h.showAtX(-2.47);
+      h.showTangentOnly(-2.47);
     }},
     // "Diesen Wert tragen wir als Punkt ein" — f'-board appears + point
     { time: T.example1Point, action: () => {
-      h.f1Label.style.display = '';
-      h.f1Label.textContent = '';
       h.boardF1.canvas.style.display = '';
       h.constructionPts[0].visible = true;
       h.boardF1.update();
     }},
-    // Example 2: tangent first
+    // Example 2: tangent first (no point)
     { time: T.example2, action: () => {
-      h.showAtX(Math.sqrt(2));
+      h.showTangentOnly(Math.sqrt(2));
     }},
     // Example 2: point appears delayed
     { time: T.example2 + 1.5, action: () => {
       h.constructionPts[1].visible = true;
       h.boardF1.update();
     }},
-    // Example 3: tangent first
+    // Example 3: tangent first (no point)
     { time: T.example3, action: () => {
-      h.showAtX(2);
+      h.showTangentOnly(2);
     }},
     // Example 3: point appears delayed
     { time: T.example3 + 1.5, action: () => {
@@ -1337,6 +1350,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       h.traceCurve.visible = false;
       for (const pt of h.constructionPts) pt.visible = false;
       for (const el of h.f1Elements) el.visible = true;
+      h.f1Label.style.visibility = '';
       h.f1Label.textContent = "Graph von f'";
       h.setGraphState('blank');
       h.boardF.update();
@@ -1473,7 +1487,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     for (const pt of h.constructionPts) pt.visible = false;
     for (const el of h.f1Elements) el.visible = true;
     h.traceCurve.visible = false;
-    h.f1Label.style.display = '';
+    h.f1Label.style.visibility = '';
     h.f1Label.textContent = "Graph von f'";
     h.boardF1.canvas.style.display = '';
     h.hideGraphics();
