@@ -1,6 +1,6 @@
 import type { StepByStepExercise } from '../types/exercise.js';
 import { recordResult } from '../progress/storage.js';
-import { renderExerciseLatex } from '../render-latex.js';
+import { renderMixedContent } from '../render-latex.js';
 import { createBoard, destroyBoard, calcBoundingBox } from '../graph/board-factory.js';
 import { plotFunction, highlightPoint, COLORS } from '../graph/function-plotter.js';
 import { PROCEDURE_LABELS } from './procedure-labels.js';
@@ -30,21 +30,19 @@ export function renderFreeMode(
 ): (() => void) | null {
   let board: import('../graph/canvas-board.js').CanvasBoard | null = null;
 
-  // ─── Header ───
+  // ─── Header (Klausur-Layout) ───
   const header = document.createElement('div');
   header.className = 'mb-4';
+  header.style.cssText = 'font-size: 1.05rem; line-height: 1.7;';
 
-  const fnDisplay = document.createElement('h3');
-  fnDisplay.className = 'text-xl font-semibold mb-3';
-  fnDisplay.style.fontFamily = 'var(--font-display)';
-  renderExerciseLatex(fnDisplay, exercise.function.latex);
-  header.appendChild(fnDisplay);
+  const fnLine = document.createElement('p');
+  fnLine.className = 'mb-1';
+  renderMixedContent(fnLine, `Gegeben ist die Funktion f mit \\(${exercise.function.latex}\\).`);
+  header.appendChild(fnLine);
 
-  // ─── Task description ───
-  const taskLabel = PROCEDURE_LABELS[exercise.procedure] ?? 'Löse die Aufgabe.';
+  const taskLabel = exercise.task ?? PROCEDURE_LABELS[exercise.procedure] ?? 'Löse die Aufgabe.';
   const taskEl = document.createElement('p');
-  taskEl.style.cssText = 'color: var(--color-ink-secondary); font-size: 0.95rem;';
-  taskEl.textContent = taskLabel;
+  renderMixedContent(taskEl, taskLabel);
   header.appendChild(taskEl);
 
   container.appendChild(header);
@@ -55,16 +53,8 @@ export function renderFreeMode(
   container.appendChild(answerSection);
 
   const highlights = exercise.verificationGraph?.highlights ?? [];
-  const proc = exercise.procedure;
-  const isMonotonie = proc === 'monotonie' || proc === 'monotonie-intervall';
 
-  if (isMonotonie && highlights.length > 0) {
-    // Monotonie: frage nach Nullstellen von f' (x-Werte der Extremstellen)
-    renderNullstellenInput(answerSection, highlights, exercise, onComplete, () => {
-      showSolution(container, exercise);
-      showVerificationGraph(container, exercise, (b) => { board = b; });
-    });
-  } else if (highlights.length > 0) {
+  if (highlights.length > 0) {
     renderCoordinateInput(answerSection, highlights, exercise, onComplete, () => {
       showSolution(container, exercise);
       showVerificationGraph(container, exercise, (b) => { board = b; });
@@ -223,119 +213,6 @@ function renderCoordinateInput(
     showSolution(container.parentElement!, exercise);
   });
   container.appendChild(hintBtn);
-}
-
-// ─── Monotonie: frage nach Nullstellen von f' ───
-
-function renderNullstellenInput(
-  container: HTMLElement,
-  highlights: Array<{ x: number; y: number; label: string }>,
-  exercise: StepByStepExercise,
-  onComplete: () => void,
-  onCorrect: () => void,
-): void {
-  const xValues = highlights.map(h => h.x).sort((a, b) => a - b);
-
-  const prompt = document.createElement('p');
-  prompt.className = 'font-medium mb-3 text-sm';
-  prompt.textContent = `Bestimme die Nullstellen von f\u2019 (${xValues.length} St\u00fcck):`;
-  container.appendChild(prompt);
-
-  const fieldsRow = document.createElement('div');
-  fieldsRow.style.cssText = 'display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem;';
-
-  const inputs: HTMLInputElement[] = [];
-  const subscripts = ['\u2081', '\u2082', '\u2083', '\u2084'];
-
-  for (let i = 0; i < xValues.length; i++) {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
-
-    const label = document.createElement('span');
-    label.className = 'font-medium text-sm';
-    label.textContent = xValues.length > 1 ? `x${subscripts[i] ?? i + 1} =` : 'x =';
-
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.inputMode = 'decimal';
-    inp.className = 'p-3 rounded-xl border min-h-[44px]';
-    inp.style.cssText = 'width: 5rem; border-color: var(--color-border); background: var(--color-surface-inset);';
-
-    wrap.append(label, inp);
-    fieldsRow.appendChild(wrap);
-    inputs.push(inp);
-  }
-
-  container.appendChild(fieldsRow);
-
-  const feedbackArea = document.createElement('div');
-  container.appendChild(feedbackArea);
-
-  const checkBtn = document.createElement('button');
-  checkBtn.className = 'btn-primary w-full py-3 rounded-xl mt-2 min-h-[44px]';
-  checkBtn.textContent = 'Pr\u00fcfen';
-  container.appendChild(checkBtn);
-
-  let solved = false;
-
-  checkBtn.addEventListener('click', () => {
-    if (solved) return;
-    const values = inputs.map(inp => inp.value.trim());
-    if (values.some(v => !v)) return;
-
-    const tolerance = 0.1;
-    const used = new Set<number>();
-    let allCorrect = true;
-
-    for (let i = 0; i < values.length; i++) {
-      const matchIdx = xValues.findIndex((x, idx) =>
-        !used.has(idx) && validateNumber(values[i], x, tolerance),
-      );
-      if (matchIdx !== -1) {
-        used.add(matchIdx);
-        inputs[i].style.borderColor = 'var(--color-success)';
-      } else {
-        allCorrect = false;
-        inputs[i].style.borderColor = 'var(--color-error)';
-      }
-    }
-
-    feedbackArea.textContent = '';
-    if (allCorrect) {
-      solved = true;
-      inputs.forEach(inp => { inp.disabled = true; });
-      checkBtn.disabled = true;
-      recordResult(exercise.module, exercise.id, true);
-
-      const fb = document.createElement('div');
-      fb.className = 'feedback-correct animate-fade-in mt-3';
-      fb.textContent = `Richtig! Die Nullstellen von f\u2019 sind ${xValues.map((x, i) => `x${subscripts[i] ?? i + 1} = ${x}`).join(' und ')}.`;
-      feedbackArea.appendChild(fb);
-
-      onCorrect();
-      onComplete();
-    } else {
-      const fb = document.createElement('div');
-      fb.className = 'feedback-incorrect animate-fade-in mt-3';
-      fb.textContent = 'Noch nicht richtig. \u00dcberpr\u00fcfe die rot markierten Werte.';
-      feedbackArea.appendChild(fb);
-
-      setTimeout(() => {
-        inputs.forEach(inp => { inp.style.borderColor = 'var(--color-border)'; });
-        feedbackArea.textContent = '';
-      }, 2000);
-    }
-  });
-
-  // Enter-Navigation
-  inputs.forEach((inp, i) => {
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        if (i < inputs.length - 1) inputs[i + 1].focus();
-        else checkBtn.click();
-      }
-    });
-  });
 }
 
 // ─── Hinweis-Button statt "Lösung anzeigen" ───

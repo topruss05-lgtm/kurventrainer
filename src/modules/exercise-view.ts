@@ -292,7 +292,8 @@ function renderExerciseByType(
     case 'reverse-inference':
       return renderReverseInference(container, exercise, onComplete);
     case 'step-by-step':
-      return mode === 'free'
+      // Frei-Modus mit nur 1 Step → spezielle Eingabe-UI, sonst normaler step-by-step
+      return (mode === 'free' && exercise.steps.length === 1)
         ? renderFreeMode(container, exercise, onComplete)
         : renderStepByStep(container, exercise, onComplete);
     case 'context-interpretation':
@@ -548,8 +549,8 @@ function renderLevelMode(
       nextBtn.style.display = 'block';
     };
 
-    // Free mode: use renderFreeMode for step-by-step exercises
-    if (caseMode === 'free' && exercise.type === 'step-by-step') {
+    // Free mode: nur bei 1-Step-Exercises die spezielle Eingabe-UI nutzen
+    if (caseMode === 'free' && exercise.type === 'step-by-step' && exercise.steps.length === 1) {
       destroyExercise = renderFreeMode(exerciseContainer, exercise, onComplete);
     } else {
       destroyExercise = renderExerciseByType(exerciseContainer, exercise, onComplete);

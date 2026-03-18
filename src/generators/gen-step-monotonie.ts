@@ -294,6 +294,17 @@ function genA2Free(): StepByStepExercise {
   const data = generateCubicRetry();
   const { fCoeffs, fPrimeCoeffs, x1, x2, y1, y2, fLatex, fPrimeLatex } = data;
 
+  // Monotonie-Intervalle MC (wie im geführten Modus)
+  const correctMonotonie = `smw auf (\u2212\u221e; ${x1}) und (${x2}; +\u221e), smf auf (${x1}; ${x2})`;
+  const wrongMono1 = `smf auf (\u2212\u221e; ${x1}) und (${x2}; +\u221e), smw auf (${x1}; ${x2})`;
+  const wrongMono2 = `smw auf (\u2212\u221e; ${x2}), smf auf (${x2}; +\u221e)`;
+  const wrongMono3 = `smw auf (${x1}; ${x2}), smf sonst`;
+  const monoOptions = [correctMonotonie, wrongMono1, wrongMono2, wrongMono3];
+  const monoObjs = monoOptions.map((opt, i) => ({ text: opt, idx: i }));
+  shuffle(monoObjs);
+  const shuffledMono = monoObjs.map(o => o.text);
+  const correctMonoIndex = monoObjs.findIndex(o => o.idx === 0);
+
   return {
     id: uid(),
     type: 'step-by-step',
@@ -312,11 +323,19 @@ function genA2Free(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: `Gib die Nullstellen von \\(f'\\) an.`,
+        instruction: `Berechne \\(f'(x)\\) und bestimme die Nullstellen.`,
         inputType: 'number-set',
         correctAnswer: [x1, x2],
-        hint: 'Bilde zunächst f\'(x), setze f\'(x) = 0 und löse die quadratische Gleichung.',
+        hint: `Bilde f'(x) mit der Potenzregel, setze f'(x) = 0 und löse die quadratische Gleichung.`,
         explanation: `\\(${fPrimeLatex}\\). Nullstellen: \\(x_1 = ${x1}\\), \\(x_2 = ${x2}\\).`,
+      },
+      {
+        instruction: `In welchen Intervallen ist f streng monoton wachsend (smw) bzw. fallend (smf)?`,
+        inputType: 'multiple-choice',
+        options: shuffledMono,
+        correctAnswer: correctMonoIndex,
+        hint: `Prüfe das Vorzeichen von \\(f'\\) in jedem Intervall: \\(f' > 0 \\Rightarrow\\) smw, \\(f' < 0 \\Rightarrow\\) smf.`,
+        explanation: `Da \\(f' > 0\\) auf \\((-\\infty;\\, ${x1})\\) und \\((${x2};\\, +\\infty)\\), ist f dort smw. Auf \\((${x1};\\, ${x2})\\) ist \\(f' < 0\\), also f smf.`,
       },
     ],
     verificationGraph: {
@@ -463,11 +482,23 @@ function genA3Free(): StepByStepExercise {
     },
     steps: [
       {
-        instruction: `Berechne einen geeigneten Wert von \\(f'\\) im Intervall \\(${intervalLabel}\\).`,
+        instruction: `Berechne \\(f'(${testVal})\\) als Testwert im Intervall.`,
         inputType: 'number',
         correctAnswer: fPrimeAtTest,
-        hint: `Bilde f'(x), wähle einen Testwert im Intervall und berechne f' dort. Zeige, dass f' auf dem ganzen Intervall dasselbe Vorzeichen hat.`,
-        explanation: `\\(${fPrimeLatex}\\). z.B. \\(f'(${testVal}) = ${fPrimeAtTest}\\). Da \\(f'\\) auf \\(${intervalLabel}\\) keine Nullstelle hat, ist \\(f'\\) dort überall ${fPrimeAtTest > 0 ? 'positiv' : 'negativ'}, also \\(f\\) ${monoResult}.`,
+        hint: `Bilde zuerst \\(f'(x)\\) mit der Potenzregel, dann setze \\(x = ${testVal}\\) ein.`,
+        explanation: `\\(${fPrimeLatex}\\). Einsetzen: \\(f'(${testVal}) = ${fPrimeAtTest}\\).`,
+      },
+      {
+        instruction: `\\(f'(${testVal}) = ${fPrimeAtTest}\\). Was folgt daraus für f auf \\(${intervalLabel}\\)?`,
+        inputType: 'multiple-choice',
+        options: [
+          `f ist dort ${monoResult === 'smw' ? 'streng monoton wachsend' : 'streng monoton fallend'}`,
+          `f ist dort ${monoResult === 'smw' ? 'streng monoton fallend' : 'streng monoton wachsend'}`,
+          'Keine Aussage möglich',
+        ],
+        correctAnswer: 0,
+        hint: `\\(f' > 0 \\Rightarrow\\) f steigt (smw). \\(f' < 0 \\Rightarrow\\) f fällt (smf). Da \\(f'\\) im Intervall keine Nullstelle hat, bleibt das Vorzeichen gleich.`,
+        explanation: `\\(f'(${testVal}) = ${fPrimeAtTest} ${fPrimeAtTest > 0 ? '> 0' : '< 0'}\\). Da \\(f'\\) auf \\(${intervalLabel}\\) keine Nullstelle hat, ist \\(f'\\) dort überall ${fPrimeAtTest > 0 ? 'positiv' : 'negativ'}, also f ${monoResult}.`,
       },
     ],
     verificationGraph: {
