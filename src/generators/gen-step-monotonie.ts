@@ -496,23 +496,29 @@ function genA3Free(): StepByStepExercise {
     },
     steps: [
       {
+        instruction: `Bestimme die Nullstellen von \\(f'\\).`,
+        inputType: 'number-set',
+        correctAnswer: [x1, x2],
+        hint: `Bilde \\(f'(x)\\) mit der Potenzregel, setze \\(f'(x) = 0\\) und löse die quadratische Gleichung.`,
+        explanation: `\\(${fPrimeLatex}\\). Nullstellen: \\(x_1 = ${x1}\\), \\(x_2 = ${x2}\\). Beide liegen nicht im Intervall \\(${intervalLabel}\\), also hat \\(f'\\) dort konstantes Vorzeichen.`,
+      },
+      {
         instruction: `Berechne \\(f'(${testVal})\\) als Testwert im Intervall.`,
         inputType: 'number',
         correctAnswer: fPrimeAtTest,
-        hint: `Bilde zuerst \\(f'(x)\\) mit der Potenzregel, dann setze \\(x = ${testVal}\\) ein.`,
-        explanation: `\\(${fPrimeLatex}\\). Einsetzen: \\(f'(${testVal}) = ${fPrimeAtTest}\\).`,
+        hint: `Setze \\(x = ${testVal}\\) in \\(f'(x)\\) ein.`,
+        explanation: `\\(f'(${testVal}) = ${fPrimeAtTest}\\).`,
       },
       {
-        instruction: `\\(f'(${testVal}) = ${fPrimeAtTest}\\). Was folgt daraus für f auf \\(${intervalLabel}\\)?`,
+        instruction: `\\(f'\\) hat keine Nullstelle im Intervall und \\(f'(${testVal}) = ${fPrimeAtTest}\\). Also ist f dort...`,
         inputType: 'multiple-choice',
         options: [
-          `f ist dort ${monoResult === 'smw' ? 'streng monoton wachsend' : 'streng monoton fallend'}`,
-          `f ist dort ${monoResult === 'smw' ? 'streng monoton fallend' : 'streng monoton wachsend'}`,
-          'Keine Aussage möglich',
+          `${monoResult === 'smw' ? 'streng monoton wachsend (smw)' : 'streng monoton fallend (smf)'}`,
+          `${monoResult === 'smw' ? 'streng monoton fallend (smf)' : 'streng monoton wachsend (smw)'}`,
         ],
         correctAnswer: 0,
-        hint: `\\(f' > 0 \\Rightarrow\\) f steigt (smw). \\(f' < 0 \\Rightarrow\\) f fällt (smf). Da \\(f'\\) im Intervall keine Nullstelle hat, bleibt das Vorzeichen gleich.`,
-        explanation: `\\(f'(${testVal}) = ${fPrimeAtTest} ${fPrimeAtTest > 0 ? '> 0' : '< 0'}\\). Da \\(f'\\) auf \\(${intervalLabel}\\) keine Nullstelle hat, ist \\(f'\\) dort überall ${fPrimeAtTest > 0 ? 'positiv' : 'negativ'}, also f ${monoResult}.`,
+        hint: `\\(f'\\) ist im ganzen Intervall ${fPrimeAtTest > 0 ? 'positiv' : 'negativ'}. \\(f' > 0 \\Rightarrow\\) smw, \\(f' < 0 \\Rightarrow\\) smf.`,
+        explanation: `\\(f'(${testVal}) = ${fPrimeAtTest} ${fPrimeAtTest > 0 ? '> 0' : '< 0'}\\). Da \\(f'\\) im Intervall keine Nullstelle hat, ist \\(f'\\) dort überall ${fPrimeAtTest > 0 ? 'positiv' : 'negativ'} \\(\\Rightarrow\\) f ist ${monoResult}.`,
       },
     ],
     verificationGraph: {
