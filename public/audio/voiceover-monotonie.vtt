@@ -7,94 +7,146 @@ Das ist der Graph einer Funktion f.
 An jeder Stelle können wir eine Tangente anlegen und ihre Steigung ablesen.
 
 3
-00:00:08,625 --> 00:00:12,083
-Hier zum Beispiel ist die Steigung drei.
+00:00:08,625 --> 00:00:13,402
+Hier zum Beispiel ist die Steigung drei — der Graph steigt steil.
 
 4
-00:00:12,083 --> 00:00:15,166
-Hier ist sie ungefähr minus eins.
+00:00:13,402 --> 00:00:16,541
+Diesen Wert tragen wir als Punkt ein.
 
 5
-00:00:15,166 --> 00:00:19,597
-Und hier ist die Steigung Null — die Tangente liegt waagerecht.
+00:00:16,541 --> 00:00:20,444
+Hier ist die Steigung minus eins — der Graph fällt.
 
 6
-00:00:19,597 --> 00:00:25,791
-Jede dieser Steigungen können wir als Punkt in ein eigenes Koordinatensystem eintragen.
+00:00:20,444 --> 00:00:24,875
+Und hier ist die Steigung Null — die Tangente liegt waagerecht.
 
 7
-00:00:25,791 --> 00:00:29,416
-Das machen wir jetzt für alle Stellen auf einmal.
+00:00:24,875 --> 00:00:27,944
+Das können wir für jede Stelle machen.
 
 8
-00:00:29,416 --> 00:00:33,902
+00:00:27,944 --> 00:00:32,430
 Was dabei entsteht, ist der Graph der Ableitung f Strich.
 
 9
-00:00:33,902 --> 00:00:38,236
+00:00:32,430 --> 00:00:36,763
 Er zeigt für jede Stelle, wie steil f gerade ist.
 
 10
-00:00:38,236 --> 00:00:42,819
-Jetzt schauen wir uns an, was uns f Strich über f verrät.
+00:00:36,763 --> 00:00:43,777
+Gehen wir den Graphen jetzt einmal von links nach rechts durch und schauen, was f Strich uns über f verrät.
 
 11
-00:00:42,819 --> 00:00:48,444
-Wo f Strich über der x-Achse liegt, ist die Steigung positiv — f steigt.
+00:00:43,777 --> 00:00:47,944
+Hier ist f Strich positiv — oberhalb der x-Achse.
 
 12
-00:00:48,444 --> 00:00:51,375
-Das heißt streng monoton wachsend.
+00:00:47,944 --> 00:00:50,194
+Die Funktion steigt.
 
 13
-00:00:51,375 --> 00:00:56,861
-Wo f Strich unter der x-Achse liegt, ist die Steigung negativ — f fällt.
+00:00:50,194 --> 00:00:53,430
+Das heißt: streng monoton wachsend.
 
 14
-00:00:56,861 --> 00:00:59,388
-Streng monoton fallend.
+00:00:53,430 --> 00:00:57,611
+Die Steigung wird kleiner... f Strich nähert sich der Null...
 
 15
-00:00:59,388 --> 00:01:03,833
-Und wo f Strich die x-Achse kreuzt, ist die Steigung Null.
+00:00:57,611 --> 00:00:59,097
+Hier.
 
 16
-00:01:03,833 --> 00:01:09,888
-An dieser Stelle wechselt f Strich von positiv zu negativ — ein Vorzeichenwechsel.
+00:00:59,097 --> 00:01:03,638
+f Strich ist Null — und wechselt von positiv zu negativ.
 
 17
-00:01:09,888 --> 00:01:13,208
-Die Funktion geht von steigend zu fallend.
+00:01:03,638 --> 00:01:06,041
+Ein Vorzeichenwechsel.
 
 18
-00:01:13,208 --> 00:01:15,458
-Das ist ein Hochpunkt.
+00:01:06,041 --> 00:01:10,180
+Die Funktion hört auf zu steigen und fängt an zu fallen.
 
 19
-00:01:15,458 --> 00:01:21,930
-Hier wechselt f Strich von negativ zu positiv — die Funktion geht von fallend zu steigend.
+00:01:10,180 --> 00:01:15,069
+Das ist ein lokaler Hochpunkt — der höchste Punkt in seiner Umgebung.
 
 20
-00:01:21,930 --> 00:01:24,180
-Das ist ein Tiefpunkt.
+00:01:15,069 --> 00:01:17,930
+f Strich ist jetzt negativ.
 
 21
-00:01:24,180 --> 00:01:25,819
-Und hier?
+00:01:17,930 --> 00:01:22,000
+Die Funktion fällt — also streng monoton fallend.
 
 22
-00:01:25,819 --> 00:01:30,666
-f Strich ist zwar Null, aber es gibt keinen Vorzeichenwechsel.
+00:01:22,000 --> 00:01:24,916
+Wieder nähert sich f Strich der Null...
 
 23
-00:01:30,666 --> 00:01:35,569
-f Strich bleibt negativ, die Funktion fällt einfach weiter.
+00:01:24,916 --> 00:01:27,055
+f Strich ist Null.
 
 24
-00:01:35,569 --> 00:01:39,055
-Das ist ein Sattelpunkt — kein Extremum.
+00:01:27,055 --> 00:01:31,125
+Aber schau was passiert: Kein Vorzeichenwechsel.
 
 25
-00:01:39,055 --> 00:01:41,861
+00:01:31,125 --> 00:01:33,722
+f Strich bleibt negativ.
+
+26
+00:01:33,722 --> 00:01:36,819
+Die Funktion fällt einfach weiter.
+
+27
+00:01:36,819 --> 00:01:40,305
+Das ist ein Sattelpunkt — kein Extremum.
+
+28
+00:01:40,305 --> 00:01:46,652
+Und obwohl f Strich hier kurz Null war — die Funktion ist trotzdem streng monoton fallend.
+
+29
+00:01:46,652 --> 00:01:52,250
+Denn streng monoton heißt nur, dass die Funktionswerte immer kleiner werden.
+
+30
+00:01:52,250 --> 00:01:55,833
+Und das tun sie hier, ohne Unterbrechung.
+
+31
+00:01:55,833 --> 00:01:58,555
+Die Funktion fällt weiter...
+
+32
+00:01:58,555 --> 00:02:04,416
+Und hier: f Strich ist Null — und diesmal wechselt es von negativ zu positiv.
+
+33
+00:02:04,416 --> 00:02:07,791
+Die Funktion geht von fallend zu steigend.
+
+34
+00:02:07,791 --> 00:02:12,597
+Ein lokaler Tiefpunkt — der niedrigste Punkt in seiner Umgebung.
+
+35
+00:02:12,597 --> 00:02:16,694
+f Strich ist wieder positiv — die Funktion steigt.
+
+36
+00:02:16,694 --> 00:02:21,472
+Also: Vorzeichenwechsel von f Strich — Extremstelle.
+
+37
+00:02:21,472 --> 00:02:24,763
+Kein Vorzeichenwechsel — Sattelpunkt.
+
+38
+00:02:24,763 --> 00:02:27,569
 Probier es jetzt selbst aus.
 

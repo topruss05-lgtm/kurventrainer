@@ -655,8 +655,8 @@ function buildMonotonieExtremstellenSection(
   const SQRT2 = Math.sqrt(2);
   const constructionData: { x: number; slope: number; label: string }[] = [
     { x: -2.47, slope: 3, label: 'm = 3' },
-    { x: -SQRT2, slope: f1(-SQRT2), label: 'm \u2248 \u22121' },
-    { x: -2, slope: 0, label: 'm = 0' },
+    { x: SQRT2, slope: f1(SQRT2), label: 'm \u2248 \u22121' },
+    { x: 2, slope: 0, label: 'm = 0' },
   ];
   const constructionPts = constructionData.map(d => {
     const pt = createPoint(d.x, d.slope, { color: '#e07a3a', size: 7, label: d.label, labelOffset: [6, -8] });
@@ -1262,23 +1262,74 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   const audio1 = new Audio(BASE + 'audio/voiceover-monotonie.mp3');
   audio1.preload = 'auto';
 
-  // ── Voiceover 1: Construction animation ──
-  // Phase 1 (0-19s): 3 example tangents + plot orange pts
-  // Phase 2 (19-29s): "Jede Steigung eintragen" + "für alle Stellen auf einmal" → sweep
-  // Phase 3 (29-38s): f' curve appears, explanation
-  // Phase 4 (38-99s): Interpretation (smw, smf, HP, TP, SP, VZW)
-  // Phase 5 (99s): Outro, reset
+  // ── Voiceover 1: Construction → Sweep → Walkthrough ──
+  // VTT timestamps (Edge TTS -10%):
+  //  0.0  "Das ist der Graph einer Funktion f."
+  //  3.0  "An jeder Stelle können wir eine Tangente anlegen..."
+  //  8.6  "Hier zum Beispiel ist die Steigung drei" → tangent x=-2.47, plot pt[0]
+  // 13.4  "Diesen Wert tragen wir als Punkt ein"
+  // 16.5  "Hier ist die Steigung minus eins" → tangent x=√2, plot pt[1]
+  // 20.4  "Und hier ist die Steigung Null" → tangent x=2, plot pt[2]
+  // 24.9  "Das können wir für jede Stelle machen" → SWEEP starts
+  // 27.9  "Was dabei entsteht..." → f' curve appears, label appears
+  // 36.8  "Gehen wir den Graphen von links nach rechts..." → WALKTHROUGH starts
+  // 43.8  smw zone
+  // 53.4  approaching HP
+  // 57.6  "Hier." → at HP
+  // 59.1  "f' ist Null — VZW" → past HP
+  // 70.2  "HP" shown
+  // 75.1  fallend zone
+  // 82.0  approaching SP
+  // 84.9  "f' ist Null" → at SP
+  // 87.1  "Kein VZW" → past SP, smf explanation
+  //100.3  "Und obwohl f' hier kurz Null war..." → smf callout visual
+  //105.8  "Die Funktion fällt weiter..."
+  //108.6  "f' ist Null — wechselt -→+" → at TP
+  //117.8  "TP" shown
+  //122.6  steigend zone
+  //126.7  "Also: VZW — Extremstelle"
+  //134.8  "Kein VZW — Sattelpunkt"
+  //137.6  "Probier es selbst aus"
 
-  // Sweep: tangent travels x=-2.8→2.8, dot traces f' path
-  const SWEEP_START = 25.8;  // "Das machen wir jetzt für alle Stellen"
-  const SWEEP_END = 29.4;    // just before "Was dabei entsteht..."
+  const SWEEP_START = 24.9;
+  const SWEEP_END = 27.9;
   const SWEEP_X0 = -2.8;
   const SWEEP_X1 = 2.8;
+  const constructionXPositions = [-2.47, Math.sqrt(2), 2];
+
+  // Walkthrough motions: point travels across f during interpretation
+  type Motion = { tStart: number; tEnd: number; xFrom: number; xTo: number };
+  const walkMotions: Motion[] = [
+    // "Hier ist f' positiv — smw" (steigend zone)
+    { tStart: 43.8, tEnd: 53.4, xFrom: -2.8, xTo: -2.2 },
+    // "Steigung wird kleiner..." approaching HP
+    { tStart: 53.4, tEnd: 57.6, xFrom: -2.2, xTo: -2.0 },
+    // At HP, hold
+    { tStart: 57.6, tEnd: 59.1, xFrom: -2.0, xTo: -2.0 },
+    // Past HP — VZW, tangent flips
+    { tStart: 59.1, tEnd: 70.2, xFrom: -2.0, xTo: -1.6 },
+    // "f' negativ — smf"
+    { tStart: 75.1, tEnd: 82.0, xFrom: -1.6, xTo: -0.2 },
+    // Approaching SP
+    { tStart: 82.0, tEnd: 84.9, xFrom: -0.2, xTo: 0.0 },
+    // At SP, hold
+    { tStart: 84.9, tEnd: 87.1, xFrom: 0.0, xTo: 0.0 },
+    // Past SP — kein VZW, f' bleibt negativ + smf explanation
+    { tStart: 87.1, tEnd: 105.8, xFrom: 0.0, xTo: 0.5 },
+    // "Die Funktion fällt weiter..." → approaching TP
+    { tStart: 105.8, tEnd: 108.6, xFrom: 0.5, xTo: 2.0 },
+    // At TP, hold
+    { tStart: 108.6, tEnd: 112.0, xFrom: 2.0, xTo: 2.0 },
+    // Past TP — VZW -→+
+    { tStart: 112.0, tEnd: 122.6, xFrom: 2.0, xTo: 2.5 },
+    // "f' wieder positiv — steigt"
+    { tStart: 122.6, tEnd: 126.7, xFrom: 2.5, xTo: 2.8 },
+  ];
 
   function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
 
   const cues: { time: number; action: () => void }[] = [
-    // Init: only f graph, f'-board hidden, everything clean
+    // ── PHASE 1: Init — only f graph ──
     { time: 0.0, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
@@ -1288,87 +1339,99 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       for (const el of h.f1Elements) el.visible = false;
       for (const pt of h.constructionPts) pt.visible = false;
     }},
-    // "An jeder Stelle..." — show f'-board (empty axes)
+    // Show f'-board (empty axes only) when tangent concept is introduced
     { time: 3.0, action: () => {
-      h.f1Label.style.display = '';
+      h.f1Label.style.display = 'none'; // no label yet
       h.boardF1.canvas.style.display = '';
       h.boardF1.update();
     }},
-    // Example 1: x=-2.47, m=3 — "Hier zum Beispiel ist die Steigung drei"
+    // Example 1: x=-2.47, m=3
     { time: 8.6, action: () => {
       h.showAtX(-2.47);
       h.constructionPts[0].visible = true;
       h.boardF1.update();
     }},
-    // Example 2: x=-√2, m≈-1 — "Hier ist sie ungefähr minus eins"
-    { time: 12.1, action: () => {
-      h.showAtX(-Math.sqrt(2));
+    // Example 2: x=√2, m≈-1
+    { time: 16.5, action: () => {
+      h.showAtX(Math.sqrt(2));
       h.constructionPts[1].visible = true;
       h.boardF1.update();
     }},
-    // Example 3: x=-2, m=0 — "Und hier ist die Steigung Null"
-    { time: 15.2, action: () => {
-      h.showAtX(-2);
+    // Example 3: x=2, m=0
+    { time: 20.4, action: () => {
+      h.showAtX(2);
       h.constructionPts[2].visible = true;
       h.boardF1.update();
     }},
-    // "Jede dieser Steigungen..." — hide tangent briefly
-    { time: 19.6, action: () => {
+    // Hide tangent before sweep
+    { time: 24.0, action: () => {
       h.hideGraphics();
     }},
-    // Sweep start: "Das machen wir jetzt für alle Stellen" — sweep begins (handled in tick)
-    // After sweep: "Was dabei entsteht..." — reveal f' curve, hide construction pts
-    { time: 29.4, action: () => {
+    // ── PHASE 2: After sweep — f' curve + label appear ──
+    { time: 27.9, action: () => {
       h.hideGraphics();
       for (const pt of h.constructionPts) pt.visible = false;
       for (const el of h.f1Elements) el.visible = true;
+      h.f1Label.style.display = '';
       h.setGraphState('blank');
       h.boardF.update();
       h.boardF1.update();
     }},
-    // "Jetzt schauen wir uns an..." — clear for interpretation
-    { time: 38.2, action: () => {
-      h.setGraphState('blank');
-      monoCtrl.clearHighlights();
-    }},
-    // "Wo f' über der x-Achse liegt — smw"
-    { time: 42.8, action: () => {
+    // ── PHASE 3: Walkthrough ── (motions handle tangent position)
+    // "Hier ist f' positiv — smw"
+    { time: 43.8, action: () => {
       h.setGraphState('zone', 'steigend');
       monoCtrl.highlightZone('steigend');
     }},
-    // "smf"
-    { time: 51.4, action: () => {
-      h.setGraphState('zone', 'fallend');
-      monoCtrl.highlightZone('fallend');
-    }},
-    // "Wo f' die x-Achse kreuzt — Steigung Null"
-    { time: 59.4, action: () => {
+    // Approaching HP — back to blank
+    { time: 53.4, action: () => {
       h.setGraphState('blank');
       monoCtrl.clearHighlights();
     }},
-    // "An dieser Stelle wechselt f' von + zu - — VZW — HP"
-    { time: 63.8, action: () => {
+    // At HP — highlight HP
+    { time: 57.6, action: () => {
       monoCtrl.highlightZone('hp');
-      h.setGraphState('point', 'hp');
-      h.showAtX(-2);
     }},
-    // "Hier wechselt f' von - zu + — TP"
-    { time: 75.5, action: () => {
-      monoCtrl.highlightZone('tp');
-      h.setGraphState('point', 'tp');
-      h.showAtX(2);
+    // "f' negativ — smf"
+    { time: 75.1, action: () => {
+      h.setGraphState('zone', 'fallend');
+      monoCtrl.highlightZone('fallend');
     }},
-    // "Und hier? f' ist Null aber kein VZW — SP"
-    { time: 84.2, action: () => {
+    // Approaching SP
+    { time: 82.0, action: () => {
+      h.setGraphState('blank');
+      monoCtrl.clearHighlights();
+    }},
+    // At SP — highlight SP + fallend
+    { time: 84.9, action: () => {
       highlightCardsMulti(monoCtrl.cards, ['fallend', 'sp']);
-      h.setGraphState('segment', undefined, 1);
-      h.showAtX(0);
-      h.showSpCallout();
+    }},
+    // SP smf explanation (visual: fallend segments stay colored)
+    { time: 100.3, action: () => {
+      h.setGraphState('zone', 'fallend');
+    }},
+    // Past SP smf done
+    { time: 105.8, action: () => {
+      h.setGraphState('blank');
+      monoCtrl.clearHighlights();
+    }},
+    // At TP — highlight TP
+    { time: 108.6, action: () => {
+      monoCtrl.highlightZone('tp');
+    }},
+    // "f' wieder positiv — steigt"
+    { time: 122.6, action: () => {
+      h.setGraphState('zone', 'steigend');
+      monoCtrl.highlightZone('steigend');
+    }},
+    // "Also: VZW — Extremstelle" — summary, hide tangent
+    { time: 126.7, action: () => {
+      h.hideGraphics();
+      h.setGraphState('blank');
+      monoCtrl.clearHighlights();
     }},
     // Outro: reset
-    { time: 99.1, action: () => {
-      h.hideGraphics();
-      h.hideSpCallout(true);
+    { time: 137.6, action: () => {
       monoCtrl.clearAll();
       h.setGraphState('blank');
       for (const pt of h.constructionPts) pt.visible = false;
@@ -1379,6 +1442,8 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
 
   let cueIdx1 = 0;
   let rafId1 = 0;
+  let playingVoiceover = false;
+
   function tick1(): void {
     const t = audio1.currentTime;
     // Fire cues
@@ -1386,23 +1451,33 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
       cues[cueIdx1].action();
       cueIdx1++;
     }
-    // Sweep animation: tangent travels across f, dot traces f'
+    // Sweep: tangent travels across f, traces f' path
     if (t >= SWEEP_START && t < SWEEP_END) {
       const progress = (t - SWEEP_START) / (SWEEP_END - SWEEP_START);
       const mx = lerp(SWEEP_X0, SWEEP_X1, progress);
       h.showAtX(mx);
-      // Hide construction pts as sweep dot passes over them
+      // Hide construction pts as sweep dot passes
       for (let i = 0; i < h.constructionPts.length; i++) {
-        if (h.constructionPts[i].visible && mx > ([-2.47, -Math.sqrt(2), -2][i] ?? 999) + 0.2) {
+        if (h.constructionPts[i].visible && mx > constructionXPositions[i] + 0.3) {
           h.constructionPts[i].visible = false;
           h.boardF1.update();
         }
+      }
+    }
+    // Walkthrough: point moves along f during interpretation
+    for (let i = walkMotions.length - 1; i >= 0; i--) {
+      const m = walkMotions[i];
+      if (t >= m.tStart && t < m.tEnd) {
+        const progress = (t - m.tStart) / (m.tEnd - m.tStart);
+        h.showAtX(lerp(m.xFrom, m.xTo, progress));
+        break;
       }
     }
     if (!audio1.paused) rafId1 = requestAnimationFrame(tick1);
   }
 
   function resetVoiceover1(): void {
+    playingVoiceover = false;
     for (const pt of h.constructionPts) pt.visible = false;
     for (const el of h.f1Elements) el.visible = true;
     h.f1Label.style.display = '';
@@ -1416,6 +1491,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   }
 
   function startPlayback1(): void {
+    playingVoiceover = true;
     cueIdx1 = 0;
     audio1.currentTime = 0;
     audio1.play().then(() => {
@@ -1488,6 +1564,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
 
   function startPlayback2(): void {
     stopPlayback1();
+    playingVoiceover = true;
     cueIdx2 = 0;
     audio2.currentTime = 0;
     audio2.play().then(() => {
@@ -1500,6 +1577,7 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
     nBtn.style.cssText = nBtnStyle + nBtnHover;
   }
   function stopPlayback2(): void {
+    playingVoiceover = false;
     audio2.pause();
     audio2.currentTime = 0;
     cancelAnimationFrame(rafId2);
@@ -1514,12 +1592,14 @@ export function renderCheatsheet(container: HTMLElement): (() => void) | null {
   audio2.addEventListener('ended', stopPlayback2);
 
   // Stop any voiceover when student manually interacts
+  // Block interaction during voiceover playback (except play/stop buttons)
   container.addEventListener('pointerdown', (e) => {
+    if (!playingVoiceover) return;
     const isPlayBtn = playBtn.contains(e.target as Node) || nBtn.contains(e.target as Node);
     if (isPlayBtn) return;
-    if (!audio1.paused) stopPlayback1();
-    if (!audio2.paused) stopPlayback2();
-  });
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
 
   return () => {
     stopPlayback1();
