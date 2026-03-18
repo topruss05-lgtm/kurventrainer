@@ -139,6 +139,178 @@ function generateCubicRetry(): CubicData {
   };
 }
 
+// ─── Parabola generation (f quadratisch, f' linear, 1 NS, 2 Intervalle) ───
+
+interface ParabolaData {
+  fCoeffs: number[];       // [a, b, c]
+  fPrimeCoeffs: number[];  // [2a, b]
+  xS: number;              // Scheitelpunkt / NS von f'
+  yS: number;
+  isOpenUp: boolean;        // a > 0 → nach oben offen → TP bei xS
+  fLatex: string;
+  fPrimeLatex: string;
+}
+
+function generateParabola(): ParabolaData {
+  const a = pick([1, -1, 2, -2]);
+  const xS = pick([-3, -2, -1, 0, 1, 2, 3]);
+  const c = pick([0, 1, -1, 2, -2, 3]);
+  // f(x) = a(x - xS)² + c = a·x² - 2a·xS·x + a·xS² + c
+  const b = -2 * a * xS;
+  const d = a * xS * xS + c;
+  const fCoeffs = [a, b, d];
+  const fPrimeCoeffs = [2 * a, b];
+  const yS = evalPoly(fCoeffs, xS);
+
+  return {
+    fCoeffs,
+    fPrimeCoeffs,
+    xS,
+    yS,
+    isOpenUp: a > 0,
+    fLatex: formatFx(fCoeffs),
+    fPrimeLatex: formatFPrime(fPrimeCoeffs),
+  };
+}
+
+// ─── Parabola A2: Monotonie rechnerisch (geführt, 4 Schritte) ───
+
+function genA2ParabolaGuided(): StepByStepExercise {
+  const data = generateParabola();
+  const { fCoeffs, fPrimeCoeffs, xS, yS, isOpenUp, fLatex, fPrimeLatex } = data;
+
+  const correctFPrime = formatPolynomial(fPrimeCoeffs);
+  const distractors = generateFPrimeDistractors(fCoeffs, fPrimeCoeffs);
+  const fpOpts = [correctFPrime, ...distractors].map((t, i) => ({ t, i }));
+  shuffle(fpOpts);
+  const correctFPrimeIdx = fpOpts.findIndex(o => o.i === 0);
+
+  const testLeft = xS - 1;
+  const testRight = xS + 1;
+  const fPrimeLeft = evalPoly(fPrimeCoeffs, testLeft);
+  const fPrimeRight = evalPoly(fPrimeCoeffs, testRight);
+  const signLeft = fPrimeLeft > 0 ? '> 0' : '< 0';
+  const signRight = fPrimeRight > 0 ? '> 0' : '< 0';
+
+  // Monotonie: a > 0 → smf auf (-∞, xS), smw auf (xS, +∞)
+  //            a < 0 → smw auf (-∞, xS), smf auf (xS, +∞)
+  const leftMono = isOpenUp ? 'smf' : 'smw';
+  const rightMono = isOpenUp ? 'smw' : 'smf';
+  const correctMono = `${leftMono} auf (\u2212\u221e; ${xS}), ${rightMono} auf (${xS}; +\u221e)`;
+  const wrongMono1 = `${rightMono} auf (\u2212\u221e; ${xS}), ${leftMono} auf (${xS}; +\u221e)`;
+  const wrongMono2 = `smw auf ganz \u211d`;
+  const wrongMono3 = `smf auf ganz \u211d`;
+  const monoOpts = [correctMono, wrongMono1, wrongMono2, wrongMono3].map((t, i) => ({ t, i }));
+  shuffle(monoOpts);
+  const correctMonoIdx = monoOpts.findIndex(o => o.i === 0);
+
+  const extremType = isOpenUp ? 'TP' : 'HP';
+
+  return {
+    id: uid(),
+    type: 'step-by-step',
+    module: 'monotonie',
+    competency: 'K2',
+    procedure: 'monotonie',
+    function: { latex: fLatex, fn: (x: number) => evalPoly(fCoeffs, x) },
+    derivatives: { first: { latex: fPrimeLatex, fn: (x: number) => evalPoly(fPrimeCoeffs, x) } },
+    steps: [
+      {
+        instruction: `Bestimme \\(f'(x)\\).`,
+        inputType: 'multiple-choice',
+        options: fpOpts.map(o => o.t),
+        correctAnswer: correctFPrimeIdx,
+        hint: 'Leite jeden Term einzeln ab: Potenzregel (x\u207F)\u2032 = n\u00B7x\u207F\u207B\u00B9.',
+        explanation: `Die Ableitung ist \\(${fPrimeLatex}\\).`,
+      },
+      {
+        instruction: `Setze \\(f'(x) = 0\\). Welcher x-Wert ist die Nullstelle von \\(f'\\)?`,
+        inputType: 'number',
+        correctAnswer: xS,
+        hint: `\\(${correctFPrime} = 0\\) nach x auflösen.`,
+        explanation: `\\(f'(x) = 0\\) ergibt \\(x = ${xS}\\).`,
+      },
+      {
+        instruction: `Welches Vorzeichen hat \\(f'(${testLeft})\\) (links) und \\(f'(${testRight})\\) (rechts)?`,
+        inputType: 'multiple-choice',
+        options: [
+          `f'(${testLeft}) ${signLeft}, f'(${testRight}) ${signRight}`,
+          `f'(${testLeft}) ${signRight}, f'(${testRight}) ${signLeft}`,
+          `beide > 0`,
+          `beide < 0`,
+        ],
+        correctAnswer: 0,
+        hint: `Setze \\(x = ${testLeft}\\) und \\(x = ${testRight}\\) in \\(f'(x)\\) ein.`,
+        explanation: `\\(f'(${testLeft}) = ${fPrimeLeft} ${signLeft}\\), \\(f'(${testRight}) = ${fPrimeRight} ${signRight}\\).`,
+      },
+      {
+        instruction: `In welchen Intervallen ist f streng monoton wachsend (smw) bzw. fallend (smf)?`,
+        inputType: 'multiple-choice',
+        options: monoOpts.map(o => o.t),
+        correctAnswer: correctMonoIdx,
+        hint: `\\(f' > 0 \\Rightarrow\\) smw, \\(f' < 0 \\Rightarrow\\) smf.`,
+        explanation: `\\(f'\\) wechselt bei \\(x = ${xS}\\) das Vorzeichen: ${leftMono} auf \\((-\\infty; ${xS})\\), ${rightMono} auf \\((${xS}; +\\infty)\\).`,
+      },
+    ],
+    verificationGraph: {
+      highlights: [
+        { x: xS, y: yS, label: `${extremType}(${xS}|${yS})`, color: isOpenUp ? '#2ecc71' : '#e74c3c' },
+      ],
+    },
+  };
+}
+
+// ─── Parabola A2: frei (2 Schritte) ───
+
+function genA2ParabolaFree(): StepByStepExercise {
+  const data = generateParabola();
+  const { fCoeffs, fPrimeCoeffs, xS, yS, isOpenUp, fLatex, fPrimeLatex } = data;
+
+  const leftMono = isOpenUp ? 'smf' : 'smw';
+  const rightMono = isOpenUp ? 'smw' : 'smf';
+  const correctMono = `${leftMono} auf (\u2212\u221e; ${xS}), ${rightMono} auf (${xS}; +\u221e)`;
+  const wrongMono1 = `${rightMono} auf (\u2212\u221e; ${xS}), ${leftMono} auf (${xS}; +\u221e)`;
+  const wrongMono2 = `smw auf ganz \u211d`;
+  const wrongMono3 = `smf auf ganz \u211d`;
+  const monoOpts = [correctMono, wrongMono1, wrongMono2, wrongMono3].map((t, i) => ({ t, i }));
+  shuffle(monoOpts);
+  const correctMonoIdx = monoOpts.findIndex(o => o.i === 0);
+
+  const extremType = isOpenUp ? 'TP' : 'HP';
+
+  return {
+    id: uid(),
+    type: 'step-by-step',
+    module: 'monotonie',
+    competency: 'K2',
+    procedure: 'monotonie',
+    function: { latex: fLatex, fn: (x: number) => evalPoly(fCoeffs, x) },
+    derivatives: { first: { latex: fPrimeLatex, fn: (x: number) => evalPoly(fPrimeCoeffs, x) } },
+    steps: [
+      {
+        instruction: `Berechne \\(f'(x)\\) und bestimme die Nullstelle.`,
+        inputType: 'number',
+        correctAnswer: xS,
+        hint: `Bilde f'(x) mit der Potenzregel und löse f'(x) = 0.`,
+        explanation: `\\(${fPrimeLatex}\\). Nullstelle: \\(x = ${xS}\\).`,
+      },
+      {
+        instruction: `In welchen Intervallen ist f smw bzw. smf?`,
+        inputType: 'multiple-choice',
+        options: monoOpts.map(o => o.t),
+        correctAnswer: correctMonoIdx,
+        hint: `Prüfe das Vorzeichen von \\(f'\\) links und rechts von \\(x = ${xS}\\).`,
+        explanation: `\\(f'\\) wechselt bei \\(x = ${xS}\\) das Vorzeichen: ${leftMono} auf \\((-\\infty; ${xS})\\), ${rightMono} auf \\((${xS}; +\\infty)\\).`,
+      },
+    ],
+    verificationGraph: {
+      highlights: [
+        { x: xS, y: yS, label: `${extremType}(${xS}|${yS})`, color: isOpenUp ? '#2ecc71' : '#e74c3c' },
+      ],
+    },
+  };
+}
+
 // ─── f' MC distractor generation ───
 
 function generateFPrimeDistractors(fCoeffs: number[], correctCoeffs: number[]): string[] {
@@ -561,8 +733,13 @@ function genA3Free(): StepByStepExercise {
 // ─── Public API ───
 
 export const MONOTONIE_STEP_CASES: CaseDefinition[] = [
-  { id: 'a2-guided', label: 'Monotonie rechnerisch (geführt)', mode: 'guided', generate: genA2Guided },
-  { id: 'a2-free', label: 'Monotonie rechnerisch (frei)', mode: 'free', generate: genA2Free },
+  // Parabeln (einfacher Einstieg: f' linear, 1 NS, 2 Intervalle)
+  { id: 'a2-parabola-guided', label: 'Parabel: Monotonie (geführt)', mode: 'guided', generate: genA2ParabolaGuided },
+  { id: 'a2-parabola-free', label: 'Parabel: Monotonie (frei)', mode: 'free', generate: genA2ParabolaFree },
+  // Kubiken (Hauptfall: f' quadratisch, 2 NS, 3 Intervalle)
+  { id: 'a2-guided', label: 'Kubisch: Monotonie (geführt)', mode: 'guided', generate: genA2Guided },
+  { id: 'a2-free', label: 'Kubisch: Monotonie (frei)', mode: 'free', generate: genA2Free },
+  // Monotonie auf Intervall zeigen
   { id: 'a3-guided', label: 'Monotonie auf Intervall (geführt)', mode: 'guided', generate: genA3Guided },
   { id: 'a3-free', label: 'Monotonie auf Intervall (frei)', mode: 'free', generate: genA3Free },
 ];

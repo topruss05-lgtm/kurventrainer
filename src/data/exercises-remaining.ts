@@ -290,28 +290,7 @@ const c6Exercises: StepByStepExercise[] = [
 ];
 
 // ════════════════════════════════════════════════════════════
-// A4 — streng monoton vs. monoton (true-false, monotonie, K1)
-// ════════════════════════════════════════════════════════════
-
-const a4Exercises: TrueFalseExercise[] = [
-  {
-    id: 'rem-a4-01',
-    type: 'true-false',
-    module: 'monotonie',
-    competency: 'K1',
-    function: { latex: 'f(x) = x^3', fn: (x) => x ** 3 },
-    statement: "Wenn f'(x₀) = 0 gilt, dann ist f an der Stelle x₀ nicht streng monoton.",
-    correct: false,
-    reasonOptions: [
-      "Gegenbeispiel: f(x) = x³ hat f'(0) = 0, ist aber streng monoton steigend auf ganz ℝ",
-      "f'(x₀) = 0 bedeutet immer, dass f dort die Monotonie wechselt",
-      "Eine Funktion kann an einer Stelle nicht gleichzeitig f'(x₀) = 0 und streng monoton sein",
-    ],
-    correctReasonIndex: 0,
-    feedbackExplanation: "Die Aussage ist falsch. Gegenbeispiel: f(x) = x³ hat f'(0) = 3·0² = 0, aber f ist auf ganz ℝ streng monoton steigend. Eine einzelne Stelle mit f'(x₀) = 0 verhindert strenge Monotonie nicht, solange f' nicht auf einem ganzen Intervall null wird.",
-    highlightX: 0,
-  },
-];
+// A4 Monotonie: vom Generator erzeugt (gen-tf-monotonie.ts)
 
 // ════════════════════════════════════════════════════════════
 // D4 — VZW-Kriterium für Wendestellen (step-by-step, wendestellen, K3)
@@ -576,7 +555,6 @@ export const remainingExercises: Exercise[] = [
   ...b3Exercises,
   ...c3Exercises,
   ...c6Exercises,
-  ...a4Exercises,
   ...d4Exercises,
   ...d9Exercises,
   ...e6Exercises,
