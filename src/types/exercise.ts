@@ -1,4 +1,4 @@
-export type ModuleId = 'monotonie' | 'extremstellen' | 'wendestellen' | 'zusammenhang' | 'quiz' | 'sachkontext' | 'kurvendiskussion';
+export type ModuleId = 'monotonie' | 'extremstellen' | 'wendestellen' | 'zusammenhang' | 'sachkontext' | 'kurvendiskussion';
 export type CompetencyLevel = 'K1' | 'K2' | 'K3' | 'K4' | 'K5';
 /** @deprecated Use CompetencyLevel instead */
 export type Difficulty = 'einfuehrung' | 'uebung' | 'herausforderung';

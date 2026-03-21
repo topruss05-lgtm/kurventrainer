@@ -26,7 +26,6 @@ function createEmpty(): AppProgress {
       zusammenhang: { completed: 0, total: 0, correct: 0 },
       kurvendiskussion: { completed: 0, total: 0, correct: 0 },
       sachkontext: { completed: 0, total: 0, correct: 0 },
-      quiz: { completed: 0, total: 0, correct: 0 },
     },
     results: [],
     spacedRepetition: [],
@@ -98,6 +97,10 @@ export function getCaseProgress(moduleId: string, exerciseType: string, caseIds:
 
 export function resetAllProgress(): void {
   localStorage.removeItem(STORAGE_KEY);
+  // Also reset spaced repetition (Klausur-Quiz)
+  localStorage.removeItem('kurventrainer-sr');
+  localStorage.removeItem('kurventrainer-sr-sessions');
+  localStorage.removeItem('kurventrainer-sr-last');
 }
 
 export function getLastSessionStart(): string | undefined {

@@ -8,7 +8,6 @@ const MODULE_WATERMARKS: Record<string, string> = {
   extremstellen: '\u2227',
   wendestellen: '\u223F',
   zusammenhang: "f\u2032",
-  quiz: '?',
 };
 
 function svgIcon(paths: string[], size = 20): SVGSVGElement {
@@ -226,6 +225,76 @@ export function renderDashboard(container: HTMLElement): (() => void) | null {
     grid.appendChild(card);
   });
 
+  // ─── Klausur-Quiz section ───
+  const quizLabel = document.createElement('p');
+  quizLabel.className = 'animate-slide-up';
+  quizLabel.style.cssText = `
+    font-family: var(--font-display); font-weight: 700; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--color-ink-muted); margin-top: 2rem; margin-bottom: 0.875rem;
+    animation-delay: ${150 + MODULE_CONFIGS.length * 60 + 60}ms;
+  `;
+  quizLabel.textContent = 'Klausurvorbereitung';
+
+  const quizBtn = document.createElement('button');
+  quizBtn.className = 'animate-slide-up';
+  quizBtn.style.cssText = `
+    width: 100%; text-align: left; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+    border: none; border-radius: 1rem; padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; gap: 1.25rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(224, 122, 58, 0.2), 0 1px 3px rgba(224, 122, 58, 0.1);
+    transition: box-shadow 0.25s, transform 0.25s;
+    animation-delay: ${150 + MODULE_CONFIGS.length * 60 + 120}ms;
+  `;
+  quizBtn.addEventListener('mouseenter', () => {
+    quizBtn.style.boxShadow = '0 8px 24px rgba(224, 122, 58, 0.28), 0 2px 6px rgba(224, 122, 58, 0.12)';
+    quizBtn.style.transform = 'translateY(-2px)';
+    quizArrow.style.transform = 'translateX(4px)';
+  });
+  quizBtn.addEventListener('mouseleave', () => {
+    quizBtn.style.boxShadow = '0 4px 16px rgba(224, 122, 58, 0.2), 0 1px 3px rgba(224, 122, 58, 0.1)';
+    quizBtn.style.transform = '';
+    quizArrow.style.transform = '';
+  });
+  quizBtn.addEventListener('click', () => navigate({ page: 'quiz' }));
+
+  const quizIcon = document.createElement('span');
+  quizIcon.style.cssText = `
+    display: flex; align-items: center; justify-content: center;
+    width: 2.75rem; height: 2.75rem; border-radius: 0.75rem; flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.18); color: #fff;
+    backdrop-filter: blur(4px); font-size: 1.25rem; font-weight: 700;
+  `;
+  quizIcon.appendChild(svgIcon([
+    'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3',
+    'M12 17h.01',
+    'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z',
+  ]));
+
+  const quizText = document.createElement('div');
+  quizText.style.cssText = 'position: relative; z-index: 1;';
+  const quizTitle = document.createElement('span');
+  quizTitle.style.cssText = `
+    display: block; font-family: var(--font-display); font-weight: 700;
+    font-size: 1rem; color: #fff;
+  `;
+  quizTitle.textContent = 'Klausur-Quiz';
+  const quizSub = document.createElement('span');
+  quizSub.style.cssText = 'display: block; font-size: 0.8rem; color: rgba(255,255,255,0.72); margin-top: 0.125rem;';
+  quizSub.textContent = 'Kriterien & Verfahren sicher abrufen';
+  quizText.append(quizTitle, quizSub);
+
+  const quizArrow = document.createElement('span');
+  quizArrow.style.cssText = `
+    margin-left: auto; color: rgba(255,255,255,0.6);
+    transition: transform 0.2s; display: flex; position: relative; z-index: 1;
+  `;
+  quizArrow.appendChild(svgIcon(['M9 18l6-6-6-6']));
+
+  quizBtn.append(quizIcon, quizText, quizArrow);
+
   // ─── Reset ───
   const resetBtn = document.createElement('button');
   resetBtn.className = 'animate-slide-up';
@@ -233,7 +302,7 @@ export function renderDashboard(container: HTMLElement): (() => void) | null {
     width: 100%; margin-top: 1.5rem; padding: 0.75rem;
     font-size: 0.75rem; cursor: pointer; transition: color 0.15s;
     color: var(--color-ink-muted); background: none; border: none;
-    animation-delay: ${150 + MODULE_CONFIGS.length * 60 + 60}ms;
+    animation-delay: ${150 + MODULE_CONFIGS.length * 60 + 180}ms;
   `;
   resetBtn.addEventListener('mouseenter', () => { resetBtn.style.color = 'var(--color-error)'; });
   resetBtn.addEventListener('mouseleave', () => { resetBtn.style.color = 'var(--color-ink-muted)'; });
@@ -245,6 +314,6 @@ export function renderDashboard(container: HTMLElement): (() => void) | null {
     }
   });
 
-  container.append(header, cheatBtn, sectionLabel, grid, resetBtn);
+  container.append(header, cheatBtn, sectionLabel, grid, quizLabel, quizBtn, resetBtn);
   return null;
 }

@@ -49,12 +49,4 @@ export const MODULE_CONFIGS: ModuleConfig[] = [
     exerciseTypes: ['context-interpretation', 'step-by-step'],
     competencyLevels: ['K3', 'K4'],
   },
-  {
-    id: 'quiz',
-    title: 'Kriterien-Quiz',
-    description: 'Alle Bedingungen und Definitionen sicher abrufen',
-    order: 7,
-    exerciseTypes: ['criteria-quiz'],
-    competencyLevels: ['K1', 'K3', 'K5'],
-  },
 ];

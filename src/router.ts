@@ -2,7 +2,8 @@ export type Route =
   | { page: 'dashboard' }
   | { page: 'module'; moduleId: string }
   | { page: 'exercise'; moduleId: string; type: string; difficulty: string }
-  | { page: 'cheatsheet' };
+  | { page: 'cheatsheet' }
+  | { page: 'quiz' };
 
 type RouteHandler = (route: Route) => void;
 
@@ -16,6 +17,10 @@ export function parseHash(hash: string): Route {
       return { page: 'exercise', moduleId: parts[1], type: parts[3], difficulty: parts[4] };
     }
     return { page: 'module', moduleId: parts[1] };
+  }
+
+  if (parts[0] === 'quiz') {
+    return { page: 'quiz' };
   }
 
   if (parts[0] === 'cheatsheet') {
@@ -39,6 +44,9 @@ export function navigate(route: Route): void {
       break;
     case 'cheatsheet':
       hash = '#/cheatsheet';
+      break;
+    case 'quiz':
+      hash = '#/quiz';
       break;
   }
   window.location.hash = hash;

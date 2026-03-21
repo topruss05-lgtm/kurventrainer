@@ -37,9 +37,6 @@ export const EXERCISE_SETS: Record<ModuleId, ExerciseSetConfig[]> = {
   sachkontext: [
     { type: 'context-interpretation', requiredIds: ['sach-f1-01', 'sach-f3-01', 'sach-f7-01'] },
   ],
-  quiz: [
-    { type: 'criteria-quiz', requiredIds: ['quiz-mono-01', 'quiz-ext-01', 'quiz-wend-01'] },
-  ],
 };
 
 export function getExerciseSet(moduleId: ModuleId): ExerciseSetConfig[] {

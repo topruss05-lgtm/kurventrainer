@@ -4,7 +4,7 @@ import { monotoneExercises } from './exercises-monotonie.js';
 import { extremstellenExercises } from './exercises-extremstellen.js';
 import { wendestellenExercises } from './exercises-wendestellen.js';
 import { zusammenhangExercises } from './exercises-zusammenhang.js';
-import { quizExercises } from './exercises-quiz.js';
+// Old quiz exercises removed — replaced by standalone Klausur-Quiz (src/quiz/)
 import { stepExtremstellenExercises } from './exercises-step-extremstellen.js';
 import { stepWendestellenExercises } from './exercises-step-wendestellen.js';
 import { sachkontextExercises } from './exercises-sachkontext.js';
@@ -18,7 +18,6 @@ const ALL_EXERCISES: Exercise[] = [
   ...extremstellenExercises,
   ...wendestellenExercises,
   ...zusammenhangExercises,
-  ...quizExercises,
   ...stepExtremstellenExercises,
   ...stepWendestellenExercises,
   ...sachkontextExercises,
